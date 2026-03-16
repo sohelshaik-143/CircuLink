@@ -8,6 +8,7 @@ const { protect } = require('../../middleware/auth');
 const { authorize, minRole } = require('../../middleware/rbac');
 const User = require('../../models/User');
 const { Notification, AuditLog } = require('../../models/Other');
+const upload = require('../../middleware/upload');
 
 const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -25,12 +26,13 @@ const validate = (req, res, next) => {
  */
 router.get('/', protect, async (req, res) => {
   try {
-    const { role, branch, campus, search, page = 1, limit = 20, sortBy = 'name' } = req.query;
+    const { role, branch, campus, search, page = 1, limit = 20, sortBy = 'name', joinedCommunity } = req.query;
     const query = { isActive: true };
 
     if (role) query.role = role;
     if (branch) query.branch = branch;
     if (campus) query.campus = campus;
+    if (joinedCommunity === 'true') query.joinedCommunity = true;
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -49,7 +51,7 @@ router.get('/', protect, async (req, res) => {
 
     const [users, total] = await Promise.all([
       User.find(query)
-        .select('name collegeId role branch campus year profilePicture points level badges isOnline lastSeen')
+        .select('name collegeId role branch campus year profilePicture points level badges isOnline lastSeen joinedCommunity')
         .sort(sortOpt)
         .skip((page - 1) * limit)
         .limit(Number(limit)),
@@ -109,34 +111,30 @@ router.get('/profile', protect, async (req, res) => {
  * @access  Private
  * @body    { name, bio, phone, language, theme, subscribedBranches, subscribedTopics, notificationPrefs }
  */
-router.put('/profile', protect, [
-  body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
-  body('bio').optional().isLength({ max: 300 }).withMessage('Bio max 300 chars'),
-  body('language').optional().isIn(['en', 'te']).withMessage('Language must be en or te'),
-  body('theme').optional().isIn(['light', 'dark']).withMessage('Theme must be light or dark'),
-  body('password').optional().isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-], validate, async (req, res) => {
+router.put('/profile', protect, upload.single('profilePicture'), async (req, res) => {
   try {
-    const { name, bio, phone, language, theme, subscribedBranches, subscribedTopics, notificationPrefs, password } = req.body;
-    
+    const { name, bio, phone, language, theme, branch, year, campus,
+            subscribedBranches, subscribedTopics, password } = req.body;
+
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    if (name) user.name = name;
+    if (name)     user.name = name;
     if (bio !== undefined) user.bio = bio;
-    if (phone) user.phone = phone;
+    if (phone)    user.phone = phone;
     if (language) user.language = language;
-    if (theme) user.theme = theme;
-    if (subscribedBranches) user.subscribedBranches = subscribedBranches;
-    if (subscribedTopics) user.subscribedTopics = subscribedTopics;
-    if (notificationPrefs) user.notificationPrefs = notificationPrefs;
+    if (theme)    user.theme = theme;
+    if (branch)   user.branch = branch;
+    if (year)     user.year = year;
+    if (campus)   user.campus = campus;
+    if (subscribedBranches) user.subscribedBranches = JSON.parse(subscribedBranches);
+    if (subscribedTopics)   user.subscribedTopics = JSON.parse(subscribedTopics);
     if (password) user.password = password;
+    if (req.file) user.profilePicture = `/uploads/${req.file.filename}`;
 
     await user.save();
 
-    const updatedUser = await User.findById(req.user._id)
-      .select('-password -refreshToken -mfaSecret');
-
+    const updatedUser = await User.findById(req.user._id).select('-password -refreshToken -mfaSecret');
     await AuditLog.create({ user: req.user._id, action: 'CHANGE_SETTINGS', details: { updated: Object.keys(req.body) } });
     res.json({ success: true, user: updatedUser });
   } catch (err) {

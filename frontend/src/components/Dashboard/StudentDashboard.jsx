@@ -2,38 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { postsAPI, circularsAPI, analyticsAPI } from '../../api/axios';
+import { postsAPI, circularsAPI, analyticsAPI, usersAPI } from '../../api/axios';
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
+  visible: { opacity: 1, transition: { staggerChildren: 0.08 } }
 };
-
-const itemVariants = {
-  hidden: { y: 30, opacity: 0, scale: 0.95 },
-  visible: { y: 0, opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 100 } }
+const item = {
+  hidden: { y: 24, opacity: 0 },
+  visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 120 } }
 };
-
-const StatCard = ({ icon, label, value, color, to }) => (
-  <motion.div variants={itemVariants}>
-    <Link to={to || '#'} className="glass-card" style={{ ...styles.statCard, borderTop: `4px solid ${color}` }}>
-      <span style={{ fontSize: '2.5rem' }}>{icon}</span>
-      <div>
-        <p style={styles.statValue}>{value}</p>
-        <p style={styles.statLabel}>{label}</p>
-      </div>
-    </Link>
-  </motion.div>
-);
 
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [recentPosts, setRecentPosts] = useState([]);
-  const [unreadCirculars, setUnreadCirculars] = useState([]);
+  const [circulars, setCirculars] = useState([]);
   const [overview, setOverview] = useState({});
+  const [communityCount, setCommunityCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,212 +26,252 @@ export default function StudentDashboard() {
       postsAPI.getAll({ limit: 5, campus: user.campus }),
       circularsAPI.getAll({ limit: 5 }),
       analyticsAPI.getOverview({ campus: user.campus }),
-    ]).then(([p, c, a]) => {
+      usersAPI.getAll({ joinedCommunity: true, limit: 1 }),
+    ]).then(([p, c, a, comm]) => {
       setRecentPosts(p.data.posts || []);
-      setUnreadCirculars((c.data.circulars || []).filter(ci => !ci.isRead));
+      setCirculars(c.data.circulars || []);
       setOverview(a.data.overview || {});
-    }).catch(() => { }).finally(() => setLoading(false));
+      setCommunityCount(comm.data.total || 0);
+    }).catch(() => {}).finally(() => setLoading(false));
   }, [user]);
 
   if (loading) return (
-    <div style={styles.loading}>
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-        style={{ fontSize: '3rem', marginBottom: '1rem' }}
-      >
-        🎓
-      </motion.div>
-      <p style={{ fontWeight: 600, color: 'var(--slate-500)' }}>Initializing your workspace...</p>
+    <div style={S.loading}>
+      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }} style={{ fontSize: '2.5rem' }}>🎓</motion.div>
+      <p style={{ color: '#64748b', fontWeight: 600, marginTop: '1rem' }}>Loading dashboard...</p>
     </div>
   );
 
-  const badges = { Beginner: '🌱', Intermediate: '🔥', Advanced: '⚡', Expert: '🏆' };
+  const unread = circulars.filter(c => !c.isRead);
+  const levelMap = { Beginner: { icon: '🌱', color: '#10b981' }, Intermediate: { icon: '🔥', color: '#f59e0b' }, Advanced: { icon: '⚡', color: '#6366f1' }, Expert: { icon: '🏆', color: '#ef4444' } };
+  const lvl = levelMap[user.level] || levelMap.Beginner;
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      style={styles.container}
-    >
-      {/* Welcome Banner */}
-      <motion.div variants={itemVariants} style={styles.welcome} className="glass-card">
-        <div style={styles.welcomeBgOverlay} />
-        <div style={{ flex: 1, position: 'relative', zIndex: 2 }}>
-          <h1 style={styles.welcomeTitle}>Welcome back, <span className="text-gradient">{user.name?.split(' ')[0] || 'Scholar'}</span>! 👋</h1>
-          <p style={styles.welcomeSub}>{user.branch} • {user.campus} Campus • Year {user.year}</p>
-          <div style={styles.badgeRow}>
-            <span style={styles.pointsPill}>⭐ {user.points} Points</span>
-            <span style={styles.levelPill}>{badges[user.level] || '🌱'} {user.level}</span>
-            {user.badges?.map(b => (
-              <span key={b} style={styles.achievePill}>{b}</span>
-            ))}
+    <motion.div variants={containerVariants} initial="hidden" animate="visible" style={S.page}>
+
+      {/* ── Hero Banner ── */}
+      <motion.div variants={item} style={S.hero}>
+        <div style={S.heroBg} />
+        <div style={S.heroGrid} />
+        <div style={{ position: 'relative', zIndex: 2, flex: 1 }}>
+          <div style={S.campusChip}>{user.campus} Campus</div>
+          <h1 style={S.heroTitle}>
+            Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 17 ? 'Afternoon' : 'Evening'},{' '}
+            <span style={S.heroName}>{user.name?.split(' ')[0]}</span>
+          </h1>
+          <p style={S.heroSub}>{user.branch || '—'} • Year {user.year || '—'} • {user.collegeId}</p>
+          <div style={S.pillRow}>
+            <span style={S.pill}>⭐ {user.points} pts</span>
+            <span style={{ ...S.pill, background: 'rgba(255,255,255,0.12)' }}>{lvl.icon} {user.level}</span>
+            {user.joinedCommunity && <span style={{ ...S.pill, background: 'rgba(16,185,129,0.25)', border: '1px solid rgba(16,185,129,0.4)' }}>✅ Community Member</span>}
           </div>
         </div>
-        <div style={{ ...styles.progressSection, position: 'relative', zIndex: 2 }}>
-          <div style={styles.progressCircle} className="animate-float">
-            <span style={styles.progressNum}>{Math.min(100, Math.round(user.points / 10))}%</span>
-            <span style={styles.progressLabel}>Level Up</span>
+        <div style={S.heroRight}>
+          <div style={S.progressRing}>
+            <svg width="90" height="90" style={{ transform: 'rotate(-90deg)' }}>
+              <circle cx="45" cy="45" r="38" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="6" />
+              <circle cx="45" cy="45" r="38" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="6"
+                strokeDasharray={`${2 * Math.PI * 38}`}
+                strokeDashoffset={`${2 * Math.PI * 38 * (1 - Math.min(1, user.points / 1000))}`}
+                strokeLinecap="round" />
+            </svg>
+            <div style={S.progressInner}>
+              <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>{Math.min(100, Math.round(user.points / 10))}%</span>
+              <span style={{ fontSize: '0.6rem', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Level</span>
+            </div>
           </div>
+        </div>
+      </motion.div>
+
+      {/* ── Stat Cards ── */}
+      <div style={S.statsGrid}>
+        {[
+          { icon: '📋', label: 'Unread Circulars', value: unread.length, color: '#ef4444', to: '/circulars', bg: '#fef2f2' },
+          { icon: '💡', label: 'Total Innovations', value: overview.totalPosts || 0, color: '#3b82f6', to: '/posts', bg: '#eff6ff' },
+          { icon: '👥', label: 'Community Members', value: communityCount, color: '#8b5cf6', to: '/users', bg: '#f5f3ff' },
+          { icon: '🏛️', label: 'Active Campus', value: overview.activeCampus || user.campus?.split(' ')[0], color: '#10b981', to: '/leaderboard', bg: '#f0fdf4' },
+        ].map((s, i) => (
+          <motion.div key={i} variants={item}>
+            <Link to={s.to} style={{ ...S.statCard, background: s.bg, borderLeft: `4px solid ${s.color}`, textDecoration: 'none' }}>
+              <div style={{ ...S.statIcon, color: s.color }}>{s.icon}</div>
+              <div>
+                <p style={{ ...S.statVal, color: s.color }}>{s.value}</p>
+                <p style={S.statLabel}>{s.label}</p>
+              </div>
+            </Link>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* ── Main Content ── */}
+      <div style={S.twoCol}>
+
+        {/* Circulars */}
+        <motion.div variants={item} style={S.card}>
+          <div style={S.cardHead}>
+            <div style={S.cardHeadLeft}>
+              <span style={S.cardIcon}>📋</span>
+              <h2 style={S.cardTitle}>Recent Circulars</h2>
+              {unread.length > 0 && <span style={S.badge}>{unread.length} new</span>}
+            </div>
+            <Link to="/circulars" style={S.viewAll}>View all →</Link>
+          </div>
+          {circulars.length === 0 ? (
+            <Empty icon="✅" text="All caught up!" />
+          ) : circulars.slice(0, 4).map(c => (
+            <Link to={`/circulars/${c._id}`} key={c._id} style={S.rowItem}>
+              <div style={{ ...S.priorityDot, background: c.priority === 'URGENT' ? '#ef4444' : c.priority === 'HIGH' ? '#f59e0b' : '#10b981' }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={S.rowTitle}>{c.title}</p>
+                <p style={S.rowMeta}>{c.category} • {new Date(c.createdAt).toLocaleDateString()}</p>
+              </div>
+              <span style={{ ...S.chip, background: c.priority === 'URGENT' ? '#fee2e2' : '#f1f5f9', color: c.priority === 'URGENT' ? '#dc2626' : '#64748b' }}>{c.priority}</span>
+            </Link>
+          ))}
+        </motion.div>
+
+        {/* Innovations */}
+        <motion.div variants={item} style={S.card}>
+          <div style={S.cardHead}>
+            <div style={S.cardHeadLeft}>
+              <span style={S.cardIcon}>💡</span>
+              <h2 style={S.cardTitle}>Top Innovations</h2>
+            </div>
+            <Link to="/posts" style={S.viewAll}>Explore →</Link>
+          </div>
+          {recentPosts.length === 0 ? (
+            <Empty icon="💡" text="Be the first to innovate!" />
+          ) : recentPosts.slice(0, 4).map(p => (
+            <Link to={`/posts/${p._id}`} key={p._id} style={S.rowItem}>
+              <div style={S.postBullet} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={S.rowTitle}>{p.title}</p>
+                <p style={S.rowMeta}>by {p.author?.name} • ❤️ {p.likes?.length || 0}</p>
+              </div>
+              {p.topics?.slice(0, 1).map(t => (
+                <span key={t} style={{ ...S.chip, background: '#eff6ff', color: '#2563eb' }}>{t}</span>
+              ))}
+            </Link>
+          ))}
+        </motion.div>
+      </div>
+
+      {/* ── Community Panel ── */}
+      <motion.div variants={item} style={S.card}>
+        <div style={S.cardHead}>
+          <div style={S.cardHeadLeft}>
+            <span style={S.cardIcon}>👥</span>
+            <h2 style={S.cardTitle}>Community</h2>
+            <span style={{ ...S.badge, background: '#f5f3ff', color: '#7c3aed' }}>{communityCount} members</span>
+          </div>
+          <Link to="/users" style={S.viewAll}>Open Directory →</Link>
+        </div>
+        {user.joinedCommunity ? (
+          <div style={S.communityJoined}>
+            <span style={{ fontSize: '2rem' }}>🎉</span>
+            <div>
+              <p style={{ fontWeight: 700, color: '#1e293b', margin: '0 0 0.25rem' }}>You're a community member!</p>
+              <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>Message peers, share files and photos — all encrypted, within the platform.</p>
+            </div>
+            <Link to="/users" style={S.communityBtn}>Connect Now</Link>
+          </div>
+        ) : (
+          <div style={S.communityJoin}>
+            <span style={{ fontSize: '2rem' }}>👋</span>
+            <div>
+              <p style={{ fontWeight: 700, color: '#1e293b', margin: '0 0 0.25rem' }}>Join {communityCount} students in the community</p>
+              <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>Encrypted messaging, file sharing — no external email access.</p>
+            </div>
+            <Link to="/users" style={S.communityBtn}>Join Community</Link>
+          </div>
+        )}
+      </motion.div>
+
+      {/* ── Quick Actions ── */}
+      <motion.div variants={item} style={S.card}>
+        <div style={S.cardHead}>
+          <div style={S.cardHeadLeft}><span style={S.cardIcon}>⚡</span><h2 style={S.cardTitle}>Quick Access</h2></div>
+        </div>
+        <div style={S.actionsGrid}>
+          {[
+            { to: '/posts/new', icon: '✍️', label: 'New Innovation', bg: '#eff6ff', color: '#1d4ed8' },
+            { to: '/circulars', icon: '📋', label: 'Circular Hub', bg: '#f0fdf4', color: '#166534' },
+            { to: '/leaderboard', icon: '🏆', label: 'Leaderboard', bg: '#fffbeb', color: '#92400e' },
+            { to: '/profile', icon: '👤', label: 'My Profile', bg: '#fdf4ff', color: '#6b21a8' },
+            { to: '/users', icon: '👥', label: 'Community', bg: '#f5f3ff', color: '#4c1d95' },
+            { to: '/notifications', icon: '🔔', label: 'Notifications', bg: '#fff7ed', color: '#9a3412' },
+          ].map(a => (
+            <motion.div key={a.to} whileHover={{ y: -3, scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+              <Link to={a.to} style={{ ...S.actionBtn, background: a.bg, color: a.color }}>
+                <span style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>{a.icon}</span>
+                <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{a.label}</span>
+              </Link>
+            </motion.div>
+          ))}
         </div>
       </motion.div>
 
-      {/* Stats */}
-      <div style={styles.statsGrid}>
-        <StatCard icon="📋" label="Unread Circulars" value={unreadCirculars.length} color="var(--danger)" to="/circulars" />
-        <StatCard icon="💡" label="Global Innovations" value={overview.totalPosts || 0} color="var(--primary)" to="/posts" />
-        <StatCard icon="👥" label="Community Members" value={overview.totalUsers || 0} color="var(--secondary)" to="/users" />
-        <StatCard icon="🏆" label="Reputation Rank" value={`#${Math.floor(Math.random() * 100) + 1}`} color="var(--accent)" to="/leaderboard" />
-      </div>
-
-      <div style={styles.twoCol}>
-        {/* Unread Circulars */}
-        <motion.div variants={itemVariants} className="glass-card" style={styles.card}>
-          <div style={styles.cardHeader}>
-            <h2 style={styles.cardTitle}>Recent Circulars</h2>
-            <Link to="/circulars" style={styles.viewAll}>View All</Link>
-          </div>
-          <div style={styles.listContainer}>
-            {unreadCirculars.length === 0 ? (
-              <div style={styles.emptyState}>
-                <span>✅</span>
-                <p>You're all caught up!</p>
-              </div>
-            ) : unreadCirculars.map(c => (
-              <motion.div whileHover={{ x: 5 }} key={c._id} style={styles.circularItem}>
-                <div style={styles.itemHeader}>
-                  <p style={styles.itemTitle}>{c.title}</p>
-                  <span style={{
-                    ...styles.priority,
-                    background: c.priority === 'URGENT' ? 'var(--danger)' : 'var(--accent)',
-                    color: '#white'
-                  }}>
-                    {c.priority}
-                  </span>
-                </div>
-                <p style={styles.itemMeta}>{c.category} • {new Date(c.createdAt).toLocaleDateString()}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Recent Innovation Posts */}
-        <motion.div variants={itemVariants} className="glass-card" style={styles.card}>
-          <div style={styles.cardHeader}>
-            <h2 style={styles.cardTitle}>Top Innovations</h2>
-            <Link to="/posts" style={styles.viewAll}>Explore</Link>
-          </div>
-          <div style={styles.listContainer}>
-            {recentPosts.length === 0 ? (
-              <div style={styles.emptyState}>
-                <span>💡</span>
-                <p>Be the first to innovate!</p>
-              </div>
-            ) : recentPosts.map(p => (
-              <motion.div whileHover={{ scale: 1.02 }} key={p._id}>
-                <Link to={`/posts/${p._id}`} style={styles.postItem}>
-                  <div style={styles.itemTitle}>{p.title}</div>
-                  <div style={styles.postMeta}>
-                    <span>BY {p.author?.name?.toUpperCase()}</span>
-                    <span>❤️ {p.likes?.length || 0}</span>
-                  </div>
-                  <div style={styles.topicRow}>
-                    {p.topics?.slice(0, 2).map(t => (
-                      <span key={t} style={styles.topicChip}>{t}</span>
-                    ))}
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Quick Actions */}
-      <motion.div variants={itemVariants} className="glass-card" style={styles.card}>
-        <h2 style={{ ...styles.cardTitle, marginBottom: '1.5rem' }}>Quick Access</h2>
-        <div style={styles.actionsGrid}>
-          <ActionButton to="/posts/new" icon="✍️" label="New Innovation" bg="var(--primary-light)" color="var(--primary-dark)" />
-          <ActionButton to="/circulars" icon="📋" label="Circular Hub" bg="#f0fdf4" color="#166534" />
-          <ActionButton to="/leaderboard" icon="🏆" label="Leaderboard" bg="#fffbeb" color="#92400e" />
-          <ActionButton to="/profile" icon="👤" label="My Portfolio" bg="#fdf4ff" color="#6b21a8" />
-        </div>
-      </motion.div>
     </motion.div>
   );
 }
 
-const ActionButton = ({ to, icon, label, bg, color }) => (
-  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-    <Link to={to} style={{ ...styles.actionBtn, background: bg, color: color }}>
-      <span style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{icon}</span>
-      {label}
-    </Link>
-  </motion.div>
+const Empty = ({ icon, text }) => (
+  <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#94a3b8', border: '2px dashed #e2e8f0', borderRadius: '0.75rem' }}>
+    <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{icon}</div>
+    <p style={{ margin: 0, fontWeight: 600 }}>{text}</p>
+  </div>
 );
 
-const styles = {
-  container: { padding: '2rem', maxWidth: '1280px', margin: '0 auto', minHeight: '100vh' },
+const S = {
+  page: { padding: '2rem', maxWidth: '1280px', margin: '0 auto' },
   loading: { height: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' },
-  welcome: {
-    background: 'linear-gradient(135deg, var(--slate-900), var(--primary-dark))',
-    color: '#fff', padding: '3rem', border: 'none',
-    marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-  },
-  welcomeBgOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    background: 'radial-gradient(circle at top right, rgba(79, 70, 229, 0.4), transparent 50%)',
-    zIndex: 1, pointerEvents: 'none'
-  },
-  welcomeTitle: { fontSize: '2.25rem', fontWeight: 800, margin: '0 0 0.5rem', letterSpacing: '-0.02em' },
-  welcomeSub: { color: 'rgba(255,255,255,0.7)', margin: '0 0 1.5rem', fontSize: '1rem', fontWeight: 500 },
-  badgeRow: { display: 'flex', gap: '0.75rem', flexWrap: 'wrap' },
-  pointsPill: { background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', borderRadius: 'var(--radius-full)', padding: '0.4rem 1rem', fontSize: '0.9rem', fontWeight: 700 },
-  levelPill: { background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', borderRadius: 'var(--radius-full)', padding: '0.4rem 1rem', fontSize: '0.9rem', fontWeight: 700 },
-  achievePill: { background: 'var(--accent)', color: '#fff', borderRadius: 'var(--radius-full)', padding: '0.4rem 1rem', fontSize: '0.85rem', fontWeight: 800 },
-  progressSection: { display: 'flex', alignItems: 'center', gap: '1rem' },
-  progressCircle: {
-    background: 'rgba(255,255,255,0.1)', border: '4px solid rgba(255,255,255,0.2)',
-    borderRadius: '50%', width: '100px', height: '100px', display: 'flex',
-    flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
-  },
-  progressNum: { fontSize: '1.75rem', fontWeight: 800 },
-  progressLabel: { fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.8 },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' },
-  statCard: {
-    padding: '1.75rem', display: 'flex', gap: '1.5rem', alignItems: 'center',
-    textDecoration: 'none', background: '#fff'
-  },
-  statValue: { fontSize: '2.25rem', fontWeight: 800, color: 'var(--slate-900)', margin: 0, lineHeight: 1 },
-  statLabel: { fontSize: '0.9rem', color: 'var(--slate-500)', fontWeight: 600, margin: '0.25rem 0 0' },
-  twoCol: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', marginBottom: '2.5rem' },
-  card: { padding: '2rem', background: '#fff' },
-  cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' },
-  cardTitle: { fontSize: '1.25rem', fontWeight: 800, color: 'var(--slate-900)', margin: 0 },
-  viewAll: { color: 'var(--primary)', fontSize: '0.9rem', textDecoration: 'none', fontWeight: 700 },
-  listContainer: { display: 'flex', flexDirection: 'column', gap: '1rem' },
-  emptyState: { textAlign: 'center', padding: '3rem', color: 'var(--slate-400)', border: '2px dashed var(--slate-100)', borderRadius: 'var(--radius-xl)' },
-  circularItem: {
-    padding: '1.25rem', borderRadius: 'var(--radius-lg)', background: 'var(--slate-50)',
-    border: '1px solid var(--slate-100)', cursor: 'pointer', transition: 'all 0.2s'
-  },
-  itemHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' },
-  itemTitle: { fontWeight: 700, fontSize: '1rem', color: 'var(--slate-800)', margin: 0 },
-  itemMeta: { fontSize: '0.85rem', color: 'var(--slate-500)', marginTop: '0.5rem', fontWeight: 500 },
-  priority: { padding: '3px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.7rem', fontWeight: 800, color: '#fff' },
-  postItem: {
-    display: 'block', padding: '1.25rem', borderRadius: 'var(--radius-lg)',
-    background: 'var(--slate-50)', border: '1px solid var(--slate-100)', textDecoration: 'none'
-  },
-  postMeta: { fontSize: '0.8rem', color: 'var(--slate-500)', display: 'flex', gap: '1rem', marginTop: '0.5rem', fontWeight: 700 },
-  topicRow: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.75rem' },
-  topicChip: { background: 'var(--primary-light)', color: 'var(--primary)', borderRadius: 'var(--radius-full)', padding: '2px 10px', fontSize: '0.75rem', fontWeight: 700 },
-  actionsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' },
-  actionBtn: {
-    padding: '1.5rem', borderRadius: 'var(--radius-xl)', display: 'flex',
-    flexDirection: 'column', alignItems: 'center', textAlign: 'center',
-    fontWeight: 800, textDecoration: 'none', fontSize: '1rem', transition: 'all 0.2s'
-  },
-};
 
+  hero: {
+    position: 'relative', overflow: 'hidden',
+    background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
+    borderRadius: '1.5rem', padding: '2.5rem 3rem',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    marginBottom: '2rem', color: '#fff',
+    boxShadow: '0 20px 60px rgba(15,23,42,0.25)',
+  },
+  heroBg: { position: 'absolute', inset: 0, background: 'radial-gradient(circle at 70% 50%, rgba(99,102,241,0.25) 0%, transparent 60%)', zIndex: 1 },
+  heroGrid: { position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)', backgroundSize: '40px 40px', zIndex: 1 },
+  campusChip: { display: 'inline-block', background: 'rgba(99,102,241,0.3)', border: '1px solid rgba(99,102,241,0.5)', borderRadius: '999px', padding: '0.25rem 0.85rem', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.75rem', color: '#a5b4fc' },
+  heroTitle: { fontSize: '2rem', fontWeight: 800, margin: '0 0 0.35rem', letterSpacing: '-0.02em' },
+  heroName: { background: 'linear-gradient(135deg, #a5b4fc, #6ee7b7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
+  heroSub: { color: 'rgba(255,255,255,0.55)', fontSize: '0.95rem', margin: '0 0 1.25rem', fontWeight: 500 },
+  pillRow: { display: 'flex', gap: '0.6rem', flexWrap: 'wrap' },
+  pill: { background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)', borderRadius: '999px', padding: '0.3rem 0.85rem', fontSize: '0.8rem', fontWeight: 700, border: '1px solid rgba(255,255,255,0.15)' },
+  heroRight: { position: 'relative', zIndex: 2 },
+  progressRing: { position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  progressInner: { position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff' },
+
+  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.75rem' },
+  statCard: { padding: '1.5rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', gap: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', transition: 'transform 0.2s', cursor: 'pointer' },
+  statIcon: { fontSize: '2.25rem', lineHeight: 1 },
+  statVal: { fontSize: '2rem', fontWeight: 800, margin: 0, lineHeight: 1 },
+  statLabel: { fontSize: '0.82rem', color: '#64748b', fontWeight: 600, margin: '0.2rem 0 0' },
+
+  twoCol: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' },
+  card: { background: '#fff', borderRadius: '1.25rem', padding: '1.75rem', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', marginBottom: '1.5rem' },
+  cardHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' },
+  cardHeadLeft: { display: 'flex', alignItems: 'center', gap: '0.6rem' },
+  cardIcon: { fontSize: '1.25rem' },
+  cardTitle: { fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 },
+  badge: { background: '#fee2e2', color: '#dc2626', borderRadius: '999px', padding: '0.15rem 0.6rem', fontSize: '0.7rem', fontWeight: 800 },
+  viewAll: { color: '#3b82f6', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 700 },
+
+  rowItem: { display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.85rem', borderRadius: '0.75rem', marginBottom: '0.5rem', background: '#f8fafc', textDecoration: 'none', transition: 'background 0.15s', cursor: 'pointer', border: '1px solid #f1f5f9' },
+  priorityDot: { width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0 },
+  postBullet: { width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6', flexShrink: 0 },
+  rowTitle: { fontSize: '0.9rem', fontWeight: 700, color: '#1e293b', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  rowMeta: { fontSize: '0.75rem', color: '#94a3b8', margin: '0.15rem 0 0', fontWeight: 500 },
+  chip: { borderRadius: '999px', padding: '0.2rem 0.6rem', fontSize: '0.7rem', fontWeight: 700, flexShrink: 0 },
+
+  communityJoined: { display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1.25rem', background: '#f0fdf4', borderRadius: '1rem', border: '1px solid #bbf7d0' },
+  communityJoin: { display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1.25rem', background: '#f5f3ff', borderRadius: '1rem', border: '1px solid #ddd6fe' },
+  communityBtn: { marginLeft: 'auto', padding: '0.6rem 1.25rem', borderRadius: '0.75rem', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: '#fff', fontWeight: 700, fontSize: '0.85rem', textDecoration: 'none', whiteSpace: 'nowrap' },
+
+  actionsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' },
+  actionBtn: { padding: '1.5rem 1rem', borderRadius: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', fontWeight: 700, textDecoration: 'none', fontSize: '0.9rem', transition: 'all 0.2s', cursor: 'pointer' },
+};
