@@ -142,7 +142,7 @@ export function UserProfile() {
         ]).then(([uRes, pRes]) => {
             setUser(uRes.data.user);
             setPosts(pRes.data.posts || []);
-            setIsFollowing(uRes.data.user.followers?.includes(currentUser?._id));
+            setIsFollowing(uRes.data.user.followers?.some(f => (f._id || f)?.toString() === currentUser?._id?.toString()));
         }).catch(() => toast.error('User not found'))
             .finally(() => setLoading(false));
     }, [targetId, currentUser?._id]);
@@ -150,7 +150,7 @@ export function UserProfile() {
     const handleFollow = async () => {
         try {
             const res = await usersAPI.follow(targetId);
-            setIsFollowing(res.data.isFollowing);
+            setIsFollowing(res.data.following);
             setUser(prev => ({
                 ...prev,
                 followers: res.data.isFollowing
@@ -307,7 +307,10 @@ export function UserProfile() {
                     <EditProfile
                         user={user}
                         onClose={() => setShowEdit(false)}
-                        onUpdate={(updated) => setUser(prev => ({ ...prev, ...updated }))}
+                        onUpdate={(updated) => {
+                            setUser(prev => ({ ...prev, ...updated }));
+                            updateUser(updated);
+                        }}
                     />
                 )}
                 {showChat && (

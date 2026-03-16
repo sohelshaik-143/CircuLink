@@ -49,7 +49,9 @@ exports.register = async (req, res) => {
       user: {
         _id: user._id, collegeId: user.collegeId, name: user.name,
         email: user.email, role: user.role, branch: user.branch,
-        campus: user.campus, points: user.points, level: user.level,
+        campus: user.campus, year: user.year, points: user.points,
+        level: user.level, profilePicture: user.profilePicture,
+        joinedCommunity: user.joinedCommunity,
       },
     });
   } catch (err) {
@@ -138,7 +140,9 @@ exports.googleLogin = async (req, res) => {
       user: {
         _id: user._id, collegeId: user.collegeId, name: user.name,
         email: user.email, role: user.role, branch: user.branch,
-        campus: user.campus, points: user.points, level: user.level,
+        campus: user.campus, year: user.year, points: user.points,
+        level: user.level, profilePicture: user.profilePicture,
+        joinedCommunity: user.joinedCommunity,
       },
     });
   } catch (err) {
@@ -204,6 +208,7 @@ exports.login = async (req, res) => {
         campus: user.campus, year: user.year, points: user.points,
         level: user.level, badges: user.badges, language: user.language,
         mfaEnabled: user.mfaEnabled, profilePicture: user.profilePicture,
+        joinedCommunity: user.joinedCommunity,
       },
     });
   } catch (err) {

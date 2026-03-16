@@ -88,7 +88,12 @@ export const notificationsAPI = {
 export const usersAPI = {
   getAll: (params) => API.get('/users', { params }),
   getOne: (id) => API.get(`/users/${id}`),
-  updateProfile: (data) => API.put('/users/profile', data),
+  updateProfile: (data) => {
+    if (data instanceof FormData) {
+      return API.put('/users/profile', data, { headers: { 'Content-Type': undefined } });
+    }
+    return API.put('/users/profile', data);
+  },
   follow: (id) => API.post(`/users/${id}/follow`),
   getLeaderboard: (params) => API.get('/users/leaderboard', { params }),
 };
