@@ -4,6 +4,8 @@ import { usersAPI } from '../../api/axios';
 import toast from 'react-hot-toast';
 
 const CAMPUSES = ['RK Valley', 'Nuzvid', 'Basar', 'Srikakulam', 'Ongole'];
+const BRANCHES = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'CHEM', 'MMT'];
+const YEARS = ['PUC-1', 'PUC-2', 'E1', 'E2', 'E3', 'E4'];
 
 export default function EditProfile({ user, onUpdate, onClose }) {
     const [form, setForm] = useState({
@@ -11,6 +13,8 @@ export default function EditProfile({ user, onUpdate, onClose }) {
         bio: user.bio || '',
         phone: user.phone || '',
         campus: user.campus || '',
+        branch: user.branch || '',
+        year: user.year || '',
         language: user.language || 'en'
     });
     const [fileOptions, setFileOptions] = useState({
@@ -120,6 +124,27 @@ export default function EditProfile({ user, onUpdate, onClose }) {
                         </select>
                         <p style={styles.hint}>Transfer students should select their current active campus.</p>
                     </div>
+
+                    {['STUDENT', 'FACULTY', 'HOD'].includes(user.role) && (
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div style={{ ...styles.field, flex: 1 }}>
+                                <label style={styles.label}>Branch</label>
+                                <select name="branch" value={form.branch} onChange={handleChange} style={styles.input}>
+                                    <option value="">Select Branch</option>
+                                    {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
+                                </select>
+                            </div>
+                            {user.role === 'STUDENT' && (
+                                <div style={{ ...styles.field, flex: 1 }}>
+                                    <label style={styles.label}>Year</label>
+                                    <select name="year" value={form.year} onChange={handleChange} style={styles.input}>
+                                        <option value="">Select Year</option>
+                                        {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     <div style={styles.field}>
                         <label style={styles.label}>Bio</label>

@@ -101,4 +101,20 @@ export const analyticsAPI = {
   getAuditLogs: (params) => API.get('/analytics/audit-logs', { params }),
 };
 
+// ─── Messages ────────────────────────────────────────────────────────────────
+export const messagesAPI = {
+  getConversation: (userId) => API.get(`/messages/${userId}`),
+  sendMessage: (userId, formData) => API.post(`/messages/${userId}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  sendText: (userId, content) => API.post(`/messages/${userId}`, { content }),
+  getUnreadCounts: () => API.get('/messages/unread'),
+};
+
+// ─── Community ───────────────────────────────────────────────────────────────
+export const communityAPI = {
+  join:  () => API.post('/users/community/join'),
+  leave: () => API.post('/users/community/leave'),
+};
+
 export default API;

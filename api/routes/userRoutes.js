@@ -289,4 +289,10 @@ router.get('/:id', protect, async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
+// ─── Community Join/Leave ────────────────────────────────────────────────────
+const msgCtrl = require('../../controllers/messageController');
+
+router.post('/community/join',  protect, msgCtrl.joinCommunity);
+router.post('/community/leave', protect, msgCtrl.leaveCommunity);
+
 module.exports = router;

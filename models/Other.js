@@ -68,8 +68,24 @@ const AuditLogSchema = new mongoose.Schema({
 
 AuditLogSchema.index({ user: 1, action: 1, createdAt: -1 });
 
+// ─── Message ────────────────────────────────────────────────────────────────
+const MessageSchema = new mongoose.Schema({
+  sender:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  receiver: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  content:  { type: String }, // AES-encrypted text, stored as-is
+  fileUrl:  { type: String }, // relative path served from /uploads/messages/
+  fileType: { type: String, enum: ['image', 'file'] },
+  fileName: { type: String },
+  isRead:   { type: Boolean, default: false },
+  readAt:   { type: Date },
+}, { timestamps: true });
+
+MessageSchema.index({ sender: 1, receiver: 1, createdAt: -1 });
+MessageSchema.index({ receiver: 1, isRead: 1 });
+
 module.exports = {
   Comment: mongoose.models.Comment || mongoose.model('Comment', CommentSchema),
   Notification: mongoose.models.Notification || mongoose.model('Notification', NotificationSchema),
   AuditLog: mongoose.models.AuditLog || mongoose.model('AuditLog', AuditLogSchema),
+  Message: mongoose.models.Message || mongoose.model('Message', MessageSchema),
 };

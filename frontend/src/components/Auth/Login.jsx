@@ -5,13 +5,6 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
-const QUICK_LOGINS = [
-  { label: 'RK Valley', id: 'r220001', pw: 'student123', color: '#3B82F6' },
-  { label: 'Nuzvid', id: 'n220001', pw: 'student123', color: '#10B981' },
-  { label: 'HOD CSE', id: 'hod_cse', pw: 'hod12345', color: '#F59E0B' },
-  { label: 'Director', id: 'DIR001', pw: 'director1', color: '#EF4444' },
-];
-
 const CAMPUS_DATA = {
   'R': { name: 'RK Valley', icon: '🏛️', color: '#3B82F6' },
   'N': { name: 'Nuzvid', icon: '🌳', color: '#10B981' },
@@ -97,13 +90,6 @@ export default function Login() {
     onError: () => toast.error('Google Sign-In was cancelled or failed'),
   });
 
-  const quickLogin = (id, pw) => {
-    const prefix = id.charAt(0).toUpperCase();
-    const campus = CAMPUS_DATA[prefix]?.name || '';
-    setForm({ ...form, collegeId: id, password: pw, campus });
-    setDetectedCampus(CAMPUS_DATA[prefix] || null);
-    toast.success('Profile Loaded', { icon: '👤' });
-  };
 
   return (
     <div style={styles.page}>
@@ -147,25 +133,6 @@ export default function Login() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
-              {isLogin && (
-                <div style={styles.quickSection}>
-                  <p style={styles.labelSmall}>SELECT CAMPUS PROFILE</p>
-                  <div style={styles.quickGrid}>
-                    {QUICK_LOGINS.map(q => (
-                      <motion.button
-                        key={q.id}
-                        type="button"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => quickLogin(q.id, q.pw)}
-                        style={{ ...styles.quickBtn, borderColor: q.color + '40', color: q.color }}
-                      >
-                        {q.label}
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <form onSubmit={handleSubmit} style={styles.form}>
                 {!isLogin && (

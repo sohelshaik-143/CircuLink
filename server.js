@@ -21,6 +21,7 @@ const userRoutes     = require('./api/routes/userRoutes');
 const postRoutes     = require('./api/routes/postRoutes');
 const circularRoutes = require('./api/routes/circularRoutes');
 const { analyticsRouter, notifRouter } = require('./api/routes/analyticsAndNotifRoutes');
+const messageRoutes = require('./api/routes/messageRoutes');
 
 // ─── App Setup ───────────────────────────────────────────────────────────────
 connectDB();
@@ -117,6 +118,7 @@ app.use('/api/posts',         postRoutes);
 app.use('/api/circulars',     circularRoutes);
 app.use('/api/analytics',     analyticsRouter);
 app.use('/api/notifications', notifRouter);
+app.use('/api/messages',      messageRoutes);
 
 // ─── Health & Docs ───────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {

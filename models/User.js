@@ -95,6 +95,10 @@ const UserSchema = new mongoose.Schema({
   // Google OAuth
   googleId: { type: String, unique: true, sparse: true },
   isGoogleUser: { type: Boolean, default: false },
+
+  // Community
+  joinedCommunity: { type: Boolean, default: false },
+  communityJoinedAt: { type: Date },
 }, { timestamps: true });
 
 // Hash password and auto-detect campus
