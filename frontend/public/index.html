@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="theme-color" content="#4F46E5" />
+  <meta name="description" content="RGUKT RK Valley - Premier Multi-Campus Innovation Platform for Students, Faculty & Research" />
+  <meta name="keywords" content="RGUKT, University, Innovation, Education, Campus, Students, Faculty, Research, IIT, Premier, Technology" />
+  <meta name="author" content="RGUKT RK Valley" />
+  <meta name="robots" content="index, follow" />
+  
+  <!-- Open Graph / Social Media -->
+  <meta property="og:title" content="RGUKT RK Valley Platform | Innovation Hub" />
+  <meta property="og:description" content="Premier Multi-Campus Innovation Platform connecting students, faculty, and researchers across RGUKT institutions" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://rgukt.ac.in" />
+  <meta property="og:site_name" content="RGUKT Platform" />
+  <meta property="og:image" content="https://rgukt.ac.in/logo-og.png" />
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="RGUKT RK Valley Platform" />
+  <meta name="twitter:description" content="Premier Multi-Campus Innovation Platform" />
+  <meta name="twitter:site" content="@rgukt_official" />
+  
+  <!-- Apple Mobile Web App -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="RGUKT" />
+  
+  <title>RGUKT RK Valley Platform | Innovation Hub</title>
+  
+  <!-- Preconnect for Performance Optimization -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="https://www.gstatic.com" />
+  
+  <!-- Font Preloading -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" />
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>" />
+  <link rel="mask-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>" color="#4F46E5" />
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+  
+  <!-- Critical CSS -->
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); min-height: 100vh; margin: 0; overflow-x: hidden; }
+    
+    #root:empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); margin: 0; }
+    #root:empty::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 20% 80%, rgba(79, 70, 229, 0.2) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(14, 165, 233, 0.2) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(245, 158, 11, 0.1) 0%, transparent 70%); pointer-events: none; animation: bgPulse 8s ease-in-out infinite; }
+    @keyframes bgPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+    
+    .initial-loader { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; z-index: 10; padding: 2rem; }
+    .initial-loader .logo-container { position: relative; display: flex; align-items: center; justify-content: center; }
+    .initial-loader .logo-glow { position: absolute; width: 120px; height: 120px; background: radial-gradient(circle, rgba(79, 70, 229, 0.4) 0%, transparent 70%); border-radius: 50%; animation: glowPulse 2s ease-in-out infinite; }
+    @keyframes glowPulse { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.2); opacity: 0.3; } }
+    .initial-loader .logo { font-size: 4rem; animation: float 3s ease-in-out infinite; position: relative; z-index: 1; filter: drop-shadow(0 10px 20px rgba(79, 70, 229, 0.3)); }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+    .initial-loader .brand-name { font-family: 'Outfit', sans-serif; font-size: 1.75rem; font-weight: 800; background: linear-gradient(135deg, #818cf8, #38bdf8, #818cf8); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 0.05em; animation: gradientFlow 3s ease infinite; }
+    @keyframes gradientFlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    .initial-loader .tagline { font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 500; color: #64748b; letter-spacing: 0.15em; text-transform: uppercase; margin-top: -0.5rem; }
+    .initial-loader .progress-container { width: 240px; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; overflow: hidden; position: relative; }
+    .initial-loader .progress-bar { height: 100%; background: linear-gradient(90deg, #4F46E5, #818CF8, #38bdf8, #4F46E5); background-size: 300% 100%; border-radius: 3px; animation: shimmer 2s ease-in-out infinite; width: 60%; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .initial-loader .loading-text { font-size: 0.75rem; color: #475569; letter-spacing: 0.1em; animation: fadeInOut 2s ease-in-out infinite; }
+    @keyframes fadeInOut { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+    #root:not(:empty) ~ .initial-loader { display: none; }
+    .skip-link { position: absolute; top: -40px; left: 0; background: #4F46E5; color: white; padding: 8px 16px; z-index: 100; transition: top 0.3s; }
+    .skip-link:focus { top: 0; }
+  </style>
+</head>
+<body>
+  <noscript>You need to enable JavaScript to run this app. Please enable JavaScript in your browser settings.</noscript>
+  <a href="#root" class="skip-link">Skip to main content</a>
+  <div id="root">
+    <div class="initial-loader">
+      <div class="logo-container">
+        <div class="logo-glow"></div>
+        <div class="logo">🎓</div>
+      <div class="brand-name">RGUKT PLATFORM</div>
+      <div class="tagline">Innovation Hub</div>
+      <div class="progress-container">
+        <div class="progress-bar"></div>
+      <div class="loading-text">Initializing secure connection...</div>
+  </div>
+</body>
+</html>

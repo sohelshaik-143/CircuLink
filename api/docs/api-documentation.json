@@ -1,0 +1,254 @@
+{
+  "title": "RGUKT RK Valley Platform — Complete API Documentation",
+  "version": "1.0.0",
+  "baseUrl": "http://localhost:5000/api",
+  "authentication": {
+    "type": "Bearer JWT",
+    "header": "Authorization: Bearer <token>",
+    "tokenExpiry": "7 days",
+    "refreshTokenExpiry": "30 days"
+  },
+  "roles": ["STUDENT", "FACULTY", "HOD", "DSW", "DEAN", "DIRECTOR", "SECURITY", "ADMIN"],
+  "campuses": ["RK Valley", "Nuzvid", "Basar", "Srikakulam"],
+  "branches": ["CSE", "ECE", "EEE", "MECH", "CIVIL", "CHEM", "MMT"],
+
+  "endpoints": {
+
+    "auth": {
+      "POST /auth/register": {
+        "desc": "Register a new user",
+        "access": "Public",
+        "body": {
+          "collegeId": "string (required) — e.g. S22CS001",
+          "email": "string (required) — must end with @rgukt.ac.in",
+          "password": "string (required, min 6 chars)",
+          "name": "string (required)",
+          "role": "STUDENT|FACULTY|HOD|DSW|DEAN|DIRECTOR|SECURITY|ADMIN",
+          "campus": "RK Valley|Nuzvid|Basar|Srikakulam",
+          "branch": "CSE|ECE|EEE|MECH|CIVIL|CHEM|MMT (required for STUDENT/FACULTY/HOD)",
+          "year": "PUC-1|PUC-2|E1|E2|E3|E4 (required for STUDENT)",
+          "section": "string (optional)"
+        },
+        "response": { "token": "JWT", "user": "UserObject" }
+      },
+      "POST /auth/login": {
+        "desc": "Login. Returns requiresMFA:true if user has MFA enabled.",
+        "access": "Public",
+        "body": {
+          "collegeId": "string",
+          "password": "string",
+          "mfaToken": "string (optional, 6-digit TOTP for privileged roles)"
+        },
+        "response": { "token": "JWT", "refreshToken": "string", "user": "UserObject" }
+      },
+      "POST /auth/logout": { "desc": "Invalidate refresh token", "access": "Private" },
+      "GET /auth/me": { "desc": "Current user profile", "access": "Private" },
+      "POST /auth/refresh-token": {
+        "desc": "Get new access token",
+        "body": { "refreshToken": "string" }
+      },
+      "POST /auth/forgot-password": { "body": { "email": "string" } },
+      "PUT /auth/reset-password/:token": { "body": { "password": "string" } },
+      "PUT /auth/change-password": { "body": { "currentPassword": "string", "newPassword": "string" } },
+      "POST /auth/setup-mfa": { "desc": "Returns TOTP secret + QR URL", "access": "Private" },
+      "POST /auth/verify-mfa": { "desc": "Enable MFA after verifying TOTP", "body": { "token": "6-digit string" } },
+      "POST /auth/disable-mfa": { "body": { "token": "6-digit string" } }
+    },
+
+    "users": {
+      "GET /users": {
+        "desc": "Paginated user list",
+        "query": { "role": "optional", "branch": "optional", "campus": "optional", "search": "optional", "page": "default 1", "limit": "default 20", "sortBy": "name|points|recent" }
+      },
+      "GET /users/leaderboard": {
+        "desc": "Top students by points",
+        "query": { "campus": "optional", "branch": "optional", "limit": "default 10" }
+      },
+      "GET /users/profile": { "desc": "Own profile", "access": "Private" },
+      "PUT /users/profile": {
+        "desc": "Update own profile",
+        "body": { "name": "optional", "bio": "max 300", "phone": "optional", "language": "en|te", "theme": "light|dark", "subscribedBranches": "array", "subscribedTopics": "array", "notificationPrefs": "object" }
+      },
+      "GET /users/:id": { "desc": "Get any user's public profile" },
+      "POST /users/:id/follow": { "desc": "Toggle follow/unfollow" },
+      "GET /users/:id/followers": { "desc": "User's followers" },
+      "GET /users/:id/following": { "desc": "Who user follows" },
+      "PUT /users/:id/deactivate": { "access": "ADMIN, DIRECTOR" },
+      "PUT /users/:id/activate": { "access": "ADMIN" },
+      "PUT /users/:id/role": { "body": { "role": "new role" }, "access": "ADMIN" }
+    },
+
+    "posts": {
+      "GET /posts": {
+        "desc": "Innovation post feed with filtering and sorting",
+        "access": "Public (with auth for restricted posts)",
+        "query": {
+          "branch": "optional", "campus": "optional", "topic": "comma-separated",
+          "type": "comma-separated", "search": "text", "author": "userId",
+          "featured": "true|false", "page": "default 1", "limit": "default 10",
+          "sort": "newest|oldest|trending|most_endorsed|most_viewed"
+        }
+      },
+      "POST /posts": {
+        "desc": "Create innovation post. Author gets +10 points.",
+        "access": "Private (any role)",
+        "body": {
+          "title": "required, 5-200 chars",
+          "content": "required, 20-5000 chars",
+          "type": "INNOVATION|RESEARCH|PROJECT|IDEA|SOCIAL_SERVICE|ACHIEVEMENT|GENERAL",
+          "topics": "array of topic strings",
+          "tags": "array of strings",
+          "visibility": "PUBLIC|BRANCH|CAMPUS|DEPARTMENT",
+          "branch": "optional (defaults to user branch)",
+          "campus": "optional"
+        }
+      },
+      "GET /posts/trending": { "desc": "Top 10 trending posts by likes+views" },
+      "GET /posts/:id": { "desc": "Full post with comments and endorsements. Auto-increments view count." },
+      "PUT /posts/:id": { "desc": "Edit post (owner/Admin/Dean/Director). Saves version history." },
+      "DELETE /posts/:id": { "desc": "Delete post and all its comments." },
+      "POST /posts/:id/like": { "desc": "Toggle like. Notifies author. Returns { liked, likesCount }." },
+      "POST /posts/:id/bookmark": { "desc": "Toggle bookmark." },
+      "POST /posts/:id/endorse": {
+        "desc": "Endorse post (FACULTY/HOD/DEAN/DIRECTOR only). Author gets +50 points.",
+        "body": { "message": "optional endorsement message" }
+      },
+      "POST /posts/:id/comment": {
+        "desc": "+5 points for commenter.",
+        "body": { "content": "required, 1-1000 chars", "parentComment": "optional (for reply threading)" }
+      },
+      "DELETE /posts/:id/comment/:commentId": { "desc": "Soft-delete comment." },
+      "POST /posts/:id/flag": { "desc": "Flag for review (FACULTY+).", "body": { "reason": "string" } },
+      "POST /posts/:id/feature": { "desc": "Mark as featured (HOD+)." },
+      "GET /posts/:id/versions": { "desc": "Version history of post." }
+    },
+
+    "circulars": {
+      "GET /circulars": {
+        "desc": "Role-based circular list. Students see PUBLISHED only. HOD sees pending too.",
+        "query": { "branch": "optional", "campus": "optional", "category": "optional", "priority": "optional", "status": "optional (for HOD+)", "search": "text", "page": "1", "limit": "10" }
+      },
+      "POST /circulars": {
+        "desc": "Create circular (starts approval workflow).",
+        "access": "FACULTY+",
+        "workflow": {
+          "FACULTY creates": "→ PENDING_HOD",
+          "HOD creates": "→ PENDING_DEAN",
+          "DEAN creates": "→ PENDING_DIRECTOR",
+          "DIRECTOR/ADMIN creates": "→ PUBLISHED directly"
+        },
+        "body": {
+          "title": "required, 5-300 chars",
+          "content": "required",
+          "category": "ACADEMIC|ADMINISTRATIVE|EXAM|EVENT|HOLIDAY|EMERGENCY|PLACEMENT|SPORTS|CULTURAL|OTHER",
+          "priority": "LOW|MEDIUM|HIGH|URGENT",
+          "targetBranches": "array (default ['ALL'])",
+          "targetCampuses": "array (default ['ALL'])",
+          "targetYears": "array (default ['ALL'])",
+          "expiryDate": "ISO date string (optional)",
+          "requiresAcknowledgment": "boolean"
+        }
+      },
+      "GET /circulars/pending": { "desc": "Circulars pending current user's approval.", "access": "HOD, DSW, DEAN, DIRECTOR" },
+      "PUT /circulars/:id/approve": {
+        "desc": "Approve and advance in workflow. On final approval → PUBLISHED and notifies all target users.",
+        "access": "HOD, DSW, DEAN, DIRECTOR",
+        "body": { "comment": "optional approval comment" }
+      },
+      "PUT /circulars/:id/reject": {
+        "access": "HOD, DSW, DEAN, DIRECTOR",
+        "body": { "reason": "required rejection reason" }
+      },
+      "POST /circulars/:id/read": { "desc": "Mark as read for current user." },
+      "POST /circulars/:id/acknowledge": { "desc": "Acknowledge receipt (for URGENT circulars)." },
+      "POST /circulars/emergency": {
+        "desc": "INSTANTLY broadcasts to ALL users. Skips approval chain. Emits socket event.",
+        "access": "SECURITY, DEAN, DIRECTOR, ADMIN",
+        "body": { "title": "required", "content": "required", "targetCampuses": "optional (default ALL)" }
+      },
+      "GET /circulars/:id": { "desc": "Full circular details. Auto-marks as read." },
+      "DELETE /circulars/:id": { "desc": "Archive (soft-delete).", "access": "DEAN, DIRECTOR, ADMIN" }
+    },
+
+    "notifications": {
+      "GET /notifications": {
+        "query": { "unreadOnly": "true|false", "page": "1", "limit": "20", "type": "optional" }
+      },
+      "PUT /notifications/:id/read": { "desc": "Mark single notification as read." },
+      "PUT /notifications/mark-all-read": { "desc": "Mark all as read." },
+      "DELETE /notifications/:id": { "desc": "Delete single notification." },
+      "DELETE /notifications/clear-all": { "desc": "Clear all read notifications." }
+    },
+
+    "analytics": {
+      "GET /analytics/overview": {
+        "desc": "Platform stats: totalUsers, totalPosts, totalCirculars, pendingApprovals, activeUsers",
+        "query": { "campus": "optional", "branch": "optional" }
+      },
+      "GET /analytics/branch-activity": {
+        "desc": "Per-branch: posts, students, faculty, endorsements",
+        "query": { "campus": "optional" }
+      },
+      "GET /analytics/campus-comparison": {
+        "desc": "All 4 campuses side-by-side: students, posts, circulars",
+        "access": "DEAN, DIRECTOR, ADMIN"
+      },
+      "GET /analytics/topic-trends": {
+        "desc": "Top 12 topics by post count + likes",
+        "query": { "campus": "optional", "branch": "optional", "days": "default 30" }
+      },
+      "GET /analytics/engagement-over-time": {
+        "desc": "Daily post count and like totals",
+        "query": { "days": "default 30" }
+      },
+      "GET /analytics/circular-stats": {
+        "desc": "Circulars by category, by status, recently published",
+        "access": "HOD+"
+      },
+      "GET /analytics/leaderboard": {
+        "desc": "Top students by points",
+        "query": { "campus": "optional", "branch": "optional", "limit": "default 20" }
+      },
+      "GET /analytics/audit-logs": {
+        "desc": "Full activity audit log",
+        "access": "DEAN, DIRECTOR, ADMIN",
+        "query": { "action": "optional", "userId": "optional", "campus": "optional", "branch": "optional", "from": "ISO date", "to": "ISO date", "page": "1", "limit": "20" }
+      },
+      "GET /analytics/export": {
+        "desc": "Export data as JSON download",
+        "access": "DIRECTOR, ADMIN",
+        "query": { "type": "users|posts|circulars" }
+      }
+    }
+  },
+
+  "socketEvents": {
+    "client → server": {
+      "join": "userId — join personal room",
+      "join_branch": "branchName — subscribe to branch updates",
+      "join_campus": "campusName — subscribe to campus updates"
+    },
+    "server → client": {
+      "notification": "New notification object",
+      "emergency": "{ title, content, broadcastBy, broadcastAt }",
+      "new_circular": "{ _id, title, category } — when circular published",
+      "circular_published": "Circular published in your branch/campus",
+      "new_post": "New post from someone you follow"
+    }
+  },
+
+  "errorResponses": {
+    "400": "Bad Request — Validation error",
+    "401": "Unauthorized — Invalid/expired token",
+    "403": "Forbidden — Insufficient role",
+    "404": "Not Found",
+    "429": "Too Many Requests — Rate limited",
+    "500": "Internal Server Error"
+  },
+
+  "rateLimits": {
+    "login": "10 attempts per 15 minutes per College ID",
+    "register": "5 attempts per hour per IP",
+    "general": "200 requests per 15 minutes per IP"
+  }
+}
