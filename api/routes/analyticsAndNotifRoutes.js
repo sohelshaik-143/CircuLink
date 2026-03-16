@@ -21,21 +21,31 @@ router.get('/overview', protect, async (req, res) => {
     if (branch && branch !== 'ALL') { uq.branch = branch; pq.branch = branch; }
 
     const [totalUsers, totalStudents, totalPosts, totalCirculars, pendingCirculars,
-      activeUsers, topPosts] = await Promise.all([
+      onlineUsers, communityMembers, campusBreakdown, topPosts] = await Promise.all([
         User.countDocuments({ ...uq, isActive: true }),
         User.countDocuments({ ...uq, role: 'STUDENT', isActive: true }),
         Post.countDocuments(pq),
         Circular.countDocuments({ status: 'PUBLISHED', isActive: true }),
         Circular.countDocuments({ status: { $in: ['PENDING_HOD', 'PENDING_DEAN', 'PENDING_DIRECTOR'] } }),
-        User.countDocuments({ ...uq, isOnline: true }),
+        User.countDocuments({ ...uq, isOnline: true, isActive: true }),
+        User.countDocuments({ ...uq, joinedCommunity: true, isActive: true }),
+        User.aggregate([
+          { $match: { isActive: true, role: 'STUDENT', ...(uq.campus ? { campus: uq.campus } : {}) } },
+          { $group: { _id: '$campus', count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+        ]),
         Post.find(pq).sort({ likesCount: -1 }).limit(3).select('title likesCount branch').lean(),
       ]);
+
+    // Determine most active campus
+    const activeCampus = campusBreakdown[0]?._id || null;
 
     res.json({
       success: true,
       overview: {
         totalUsers, totalStudents, totalPosts, totalCirculars,
-        pendingCirculars, activeUsers, topPosts,
+        pendingCirculars, onlineUsers, communityMembers,
+        campusBreakdown, activeCampus, topPosts,
       },
     });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }

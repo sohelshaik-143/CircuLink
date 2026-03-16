@@ -93,12 +93,12 @@ export default function AnalyticsDashboard() {
   };
 
   const statCards = [
-    { label: 'Total Users', value: overview.totalUsers ?? '—', icon: '👥', color: '#3b82f6', bg: '#eff6ff', sub: 'Registered accounts' },
-    { label: 'Community Members', value: overview.communityMembers ?? '—', icon: '🤝', color: '#8b5cf6', bg: '#f5f3ff', sub: 'Opted in' },
-    { label: 'Online Now', value: overview.onlineUsers ?? '—', icon: '🟢', color: '#10b981', bg: '#f0fdf4', sub: 'Active right now' },
-    { label: 'Published Posts', value: overview.totalPosts ?? '—', icon: '💡', color: '#f59e0b', bg: '#fffbeb', sub: 'Innovations' },
-    { label: 'Circulars', value: overview.totalCirculars ?? '—', icon: '📋', color: '#ef4444', bg: '#fef2f2', sub: 'Published' },
-    { label: 'Pending Approval', value: overview.pendingCirculars ?? '—', icon: '⏳', color: '#64748b', bg: '#f8fafc', sub: 'Awaiting review' },
+    { label: 'Total Users', value: overview.totalUsers ?? 0, icon: '👥', color: '#3b82f6', bg: '#eff6ff', sub: `${overview.totalStudents ?? 0} students` },
+    { label: 'Community Members', value: overview.communityMembers ?? 0, icon: '🤝', color: '#8b5cf6', bg: '#f5f3ff', sub: 'Opted in' },
+    { label: 'Online Now', value: overview.onlineUsers ?? 0, icon: '🟢', color: '#10b981', bg: '#f0fdf4', sub: 'Active right now' },
+    { label: 'Published Posts', value: overview.totalPosts ?? 0, icon: '💡', color: '#f59e0b', bg: '#fffbeb', sub: 'Innovations' },
+    { label: 'Circulars', value: overview.totalCirculars ?? 0, icon: '📋', color: '#ef4444', bg: '#fef2f2', sub: 'Published' },
+    { label: 'Pending Approval', value: overview.pendingCirculars ?? 0, icon: '⏳', color: '#64748b', bg: '#f8fafc', sub: 'Awaiting review' },
   ];
 
   const levelColor = { Beginner: '#10b981', Intermediate: '#f59e0b', Advanced: '#6366f1', Expert: '#ef4444' };
