@@ -8,6 +8,7 @@ import { NotificationProvider } from './context/NotificationContext';
 
 // Components
 import Login from './components/Auth/Login';
+import ProfileSetup from './components/Auth/ProfileSetup';
 import Navbar from './components/Layout/Navbar';
 import StudentDashboard from './components/Dashboard/StudentDashboard';
 import { PostFeed, PostForm } from './components/Posts/PostComponents';
@@ -61,12 +62,17 @@ function ProtectedRoute({ children, roles }) {
 // App layout with navbar
 function AppLayout({ children }) {
   const { user } = useAuth();
+  const needsProfileSetup = user &&
+    ['STUDENT', 'FACULTY'].includes(user.role) &&
+    (!user.branch || !user.year);
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--slate-50)' }}>
       {user && <Navbar />}
       <main>
         {children}
       </main>
+      {needsProfileSetup && <ProfileSetup />}
     </div>
   );
 }

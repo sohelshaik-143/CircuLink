@@ -92,7 +92,11 @@ export function CircularList() {
       <div style={styles.header}>
         <h1 style={styles.title}>📋 Circulars</h1>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {canCreateCircular && (
+          {user?.role === 'STUDENT' ? (
+            <button onClick={() => setShowForm(true)} style={{ ...styles.newBtn, background: '#8b5cf6' }}>
+              💡 Suggest Idea
+            </button>
+          ) : canCreateCircular && (
             <button onClick={() => setShowForm(true)} style={styles.newBtn}>+ New Circular</button>
           )}
         </div>
@@ -175,8 +179,8 @@ export function CircularList() {
               </div>
             )}
 
-            {/* Delete button for author/HOD+ */}
-            {(c.author?._id === user?._id || ['HOD', 'DSW', 'DEAN', 'DIRECTOR', 'ADMIN'].includes(user?.role)) && (
+            {/* Delete button for author or HOD+ */}
+            {(c.author?._id === user?._id || c.author === user?._id || ['HOD', 'DSW', 'DEAN', 'DIRECTOR', 'ADMIN'].includes(user?.role)) && (
               <button
                 onClick={(e) => { e.stopPropagation(); handleDelete(c._id); }}
                 style={styles.deleteBtn}

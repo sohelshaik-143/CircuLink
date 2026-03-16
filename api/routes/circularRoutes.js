@@ -109,7 +109,7 @@ router.get('/', protect, async (req, res) => {
  * @desc    Create a new circular (starts approval workflow)
  * @access  Private — FACULTY, HOD, DSW, DEAN, DIRECTOR, ADMIN
  */
-router.post('/', protect, minRole('FACULTY'), upload.array('attachments', 5), [
+router.post('/', protect, upload.array('attachments', 5), [
   body('title').trim().notEmpty().isLength({ max: 300 }).withMessage('Title required'),
   body('content').trim().notEmpty().withMessage('Content required'),
   body('category').isIn(['ACADEMIC', 'ADMINISTRATIVE', 'EXAM', 'EVENT', 'HOLIDAY', 'EMERGENCY', 'PLACEMENT', 'SPORTS', 'CULTURAL', 'OTHER'])
@@ -137,7 +137,14 @@ router.post('/', protect, minRole('FACULTY'), upload.array('attachments', 5), [
     let initialStatus;
     const approvalChain = [];
 
-    if (role === 'FACULTY') {
+    if (role === 'STUDENT') {
+      initialStatus = 'PENDING_HOD';
+      approvalChain.push(
+        { role: 'HOD', status: 'PENDING' },
+        { role: 'DEAN', status: 'PENDING' },
+        { role: 'DIRECTOR', status: 'PENDING' },
+      );
+    } else if (role === 'FACULTY') {
       initialStatus = 'PENDING_HOD';
       approvalChain.push(
         { role: 'HOD', status: 'PENDING' },
