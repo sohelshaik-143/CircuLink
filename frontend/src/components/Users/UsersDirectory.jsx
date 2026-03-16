@@ -165,6 +165,7 @@ export default function UsersDirectory() {
                                                     <div style={styles.avatar}>{u.name[0]}</div>
                                                 )}
                                                 <span style={styles.levelBadge}>{u.level}</span>
+                                                {u.isOnline && <span style={styles.onlineDot} title="Online now" />}
                                             </div>
                                             <h3 style={styles.userName}>{u.name}</h3>
                                             <p style={styles.userMeta}>{u.branch} • {u.year || 'N/A'}</p>
@@ -213,6 +214,7 @@ const styles = {
     avatar: { width: '72px', height: '72px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 800 },
     avatarImg: { width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover' },
     levelBadge: { position: 'absolute', bottom: '-4px', right: '-4px', background: '#F59E0B', color: '#fff', fontSize: '0.6rem', fontWeight: 800, padding: '2px 5px', borderRadius: '999px' },
+    onlineDot: { position: 'absolute', top: 0, left: 0, width: '14px', height: '14px', background: '#22c55e', borderRadius: '50%', border: '2px solid #fff', boxShadow: '0 0 0 2px rgba(34,197,94,0.3)' },
     userName: { fontSize: '1rem', fontWeight: 700, margin: 0, color: '#1e293b' },
     userMeta: { fontSize: '0.8rem', color: '#64748b', margin: 0 },
     campusTag: { background: '#EFF6FF', color: '#2563EB', padding: '3px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700 },

@@ -120,6 +120,28 @@ app.use('/api/analytics',     analyticsRouter);
 app.use('/api/notifications', notifRouter);
 app.use('/api/messages',      messageRoutes);
 
+// ─── Global Search ───────────────────────────────────────────────────────────
+app.get('/api/search', require('./middleware/auth').protect, async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.trim().length < 2) return res.json({ success: true, results: [] });
+    const Post = require('./models/Post');
+    const Circular = require('./models/Circular');
+    const regex = new RegExp(q.trim(), 'i');
+    const [posts, circulars] = await Promise.all([
+      Post.find({ status: 'PUBLISHED', $or: [{ title: regex }, { content: regex }] })
+        .select('title type branch').limit(5).lean(),
+      Circular.find({ status: 'PUBLISHED', $or: [{ title: regex }, { content: regex }] })
+        .select('title category priority').limit(5).lean(),
+    ]);
+    const results = [
+      ...posts.map(p => ({ ...p, _type: 'post' })),
+      ...circulars.map(c => ({ ...c, _type: 'circular' })),
+    ];
+    res.json({ success: true, results });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
 // ─── Health & Docs ───────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
   res.json({

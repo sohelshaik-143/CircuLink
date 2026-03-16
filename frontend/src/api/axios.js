@@ -122,4 +122,9 @@ export const communityAPI = {
   leave: () => API.post('/users/community/leave'),
 };
 
+// ─── Search ──────────────────────────────────────────────────────────────────
+export const searchAPI = {
+  search: (q) => API.get('/search', { params: { q } }),
+};
+
 export default API;

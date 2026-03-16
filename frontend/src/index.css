@@ -1047,3 +1047,41 @@ select:focus {
     display: none !important;
   }
 }
+
+/* ─── Mobile Responsiveness ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .nav-desktop-links {
+    display: none !important;
+  }
+  .nav-hamburger {
+    display: flex !important;
+  }
+  .nav-mobile-menu {
+    display: block !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Dashboard grid */
+  [style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Profile header */
+  [style*="flex-wrap: wrap"] {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  /* Stats grid - 2 col on mobile */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Smaller padding on mobile */
+  [style*="padding: 2rem"] {
+    padding: 1rem !important;
+  }
+}

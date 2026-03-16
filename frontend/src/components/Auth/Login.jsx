@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../../context/AuthContext';
+import API from '../../api/axios';
 import toast from 'react-hot-toast';
 
 const CAMPUS_DATA = {
@@ -26,6 +27,12 @@ export default function Login() {
   const [detectedCampus, setDetectedCampus] = useState(null);
   const [step, setStep] = useState('login'); // 'login' | 'mfa'
   const [loading, setLoading] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [resetToken, setResetToken] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [forgotStep, setForgotStep] = useState('email'); // 'email' | 'reset' | 'done'
 
   const BRANCHES = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'MME', 'CHEM', 'PUC'];
   const ROLES = ['STUDENT', 'FACULTY', 'HOD', 'DEAN', 'DIRECTOR', 'ADMIN'];
@@ -75,6 +82,47 @@ export default function Login() {
     }
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    try {
+      const { data } = await API.post('/auth/forgot-password', { email: forgotEmail });
+      if (data.resetToken) {
+        setResetToken(data.resetToken);
+        setForgotStep('reset');
+        toast.success('Token generated! Use it below to reset your password.');
+      } else {
+        toast.success(data.message);
+        setShowForgotModal(false);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to send reset token');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    try {
+      const { data } = await API.post('/auth/reset-password', { token: resetToken, password: resetPassword });
+      toast.success(data.message);
+      setForgotStep('done');
+      setTimeout(() => {
+        setShowForgotModal(false);
+        setForgotStep('email');
+        setForgotEmail('');
+        setResetToken('');
+        setResetPassword('');
+      }, 2000);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Reset failed');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
@@ -93,6 +141,88 @@ export default function Login() {
 
   return (
     <div style={styles.page}>
+      {/* Forgot Password Modal */}
+      <AnimatePresence>
+        {showForgotModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={styles.modalOverlay}
+            onClick={(e) => { if (e.target === e.currentTarget) setShowForgotModal(false); }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              style={styles.forgotModal}
+            >
+              {forgotStep === 'email' && (
+                <>
+                  <h2 style={styles.modalTitle}>Reset Password</h2>
+                  <p style={styles.modalDesc}>Enter your college email to receive a reset token.</p>
+                  <form onSubmit={handleForgotPassword} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <input
+                      type="email"
+                      value={forgotEmail}
+                      onChange={e => setForgotEmail(e.target.value)}
+                      placeholder="e.g. r220379@rguktrkv.ac.in"
+                      required
+                      style={styles.modalInput}
+                    />
+                    <button type="submit" disabled={forgotLoading} style={styles.modalBtn}>
+                      {forgotLoading ? 'Sending...' : 'Get Reset Token'}
+                    </button>
+                    <button type="button" onClick={() => setShowForgotModal(false)} style={styles.modalCancelBtn}>Cancel</button>
+                  </form>
+                </>
+              )}
+              {forgotStep === 'reset' && (
+                <>
+                  <h2 style={styles.modalTitle}>Set New Password</h2>
+                  <p style={styles.modalDesc}>Your reset token is shown below. Enter it along with your new password.</p>
+                  <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                      <label style={styles.modalLabel}>Reset Token</label>
+                      <input
+                        type="text"
+                        value={resetToken}
+                        onChange={e => setResetToken(e.target.value)}
+                        required
+                        style={styles.modalInput}
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.modalLabel}>New Password</label>
+                      <input
+                        type="password"
+                        value={resetPassword}
+                        onChange={e => setResetPassword(e.target.value)}
+                        placeholder="Min 6 characters"
+                        minLength={6}
+                        required
+                        style={styles.modalInput}
+                      />
+                    </div>
+                    <button type="submit" disabled={forgotLoading} style={styles.modalBtn}>
+                      {forgotLoading ? 'Resetting...' : 'Reset Password'}
+                    </button>
+                    <button type="button" onClick={() => setShowForgotModal(false)} style={styles.modalCancelBtn}>Cancel</button>
+                  </form>
+                </>
+              )}
+              {forgotStep === 'done' && (
+                <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</div>
+                  <h2 style={styles.modalTitle}>Password Reset!</h2>
+                  <p style={styles.modalDesc}>You can now log in with your new password.</p>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Dynamic Background */}
       <div style={styles.bgOverlay} />
       <motion.div
@@ -261,6 +391,14 @@ export default function Login() {
                     {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Log In"}
                   </button>
                 </div>
+
+                {isLogin && (
+                  <div style={{ textAlign: 'center', marginTop: '0.25rem' }}>
+                    <button type="button" onClick={() => { setShowForgotModal(true); setForgotStep('email'); }} style={{ ...styles.toggleBtn, fontSize: '0.8rem', color: 'var(--slate-500)' }}>
+                      Forgot Password?
+                    </button>
+                  </div>
+                )}
 
                 {isLogin && (
                   <>
@@ -462,4 +600,13 @@ const styles = {
   },
   campusDots: { display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '1rem' },
   dot: { width: '8px', height: '8px', borderRadius: '50%', opacity: 0.6 },
+  // Forgot Password Modal
+  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' },
+  forgotModal: { background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1.5rem', padding: '2.5rem', maxWidth: '400px', width: '100%', backdropFilter: 'blur(20px)' },
+  modalTitle: { fontSize: '1.5rem', fontWeight: 800, color: '#f1f5f9', margin: '0 0 0.5rem' },
+  modalDesc: { color: '#94a3b8', fontSize: '0.9rem', margin: '0 0 1.5rem', lineHeight: 1.5 },
+  modalLabel: { fontSize: '0.85rem', fontWeight: 600, color: '#cbd5e1', display: 'block', marginBottom: '0.4rem' },
+  modalInput: { width: '100%', padding: '0.85rem 1rem', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#f1f5f9', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' },
+  modalBtn: { padding: '0.9rem', borderRadius: '0.75rem', border: 'none', background: 'linear-gradient(135deg, #4F46E5, #3730A3)', color: '#fff', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer' },
+  modalCancelBtn: { padding: '0.6rem', borderRadius: '0.75rem', border: 'none', background: 'none', color: '#64748b', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer', textDecoration: 'underline' },
 };

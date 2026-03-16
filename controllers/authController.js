@@ -259,6 +259,54 @@ exports.getMe = async (req, res) => {
   res.json({ success: true, user });
 };
 
+// @route   POST /api/auth/forgot-password
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) return res.json({ success: true, message: 'If that email exists, a reset link has been sent.' });
+
+    const crypto = require('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    user.passwordResetToken = token;
+    user.passwordResetExpires = expires;
+    await user.save({ validateBeforeSave: false });
+
+    // Return token directly (in production, send via email)
+    res.json({
+      success: true,
+      message: 'Password reset token generated.',
+      resetToken: token,
+      note: 'Use this token to reset your password within 1 hour',
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// @route   POST /api/auth/reset-password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    const user = await User.findOne({
+      passwordResetToken: token,
+      passwordResetExpires: { $gt: new Date() },
+    });
+    if (!user) return res.status(400).json({ success: false, message: 'Invalid or expired reset token.' });
+
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    res.json({ success: true, message: 'Password reset successfully. You can now log in.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 // @route   POST /api/auth/setup-mfa
 exports.setupMFA = async (req, res) => {
   try {

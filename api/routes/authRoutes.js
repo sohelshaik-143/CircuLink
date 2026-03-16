@@ -103,24 +103,20 @@ router.post('/refresh-token',
 router.post('/forgot-password',
   body('email').isEmail().withMessage('Valid email required'),
   validate,
-  async (req, res) => {
-    // Implementation: generate token, send email
-    res.json({ success: true, message: 'Password reset email sent (if email exists).' });
-  }
+  authController.forgotPassword
 );
 
 /**
- * @route   PUT /api/auth/reset-password/:token
+ * @route   POST /api/auth/reset-password
  * @desc    Reset password with token
  * @access  Public
- * @body    { password }
+ * @body    { token, password }
  */
-router.put('/reset-password/:token',
+router.post('/reset-password',
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 chars'),
+  body('token').notEmpty().withMessage('Reset token required'),
   validate,
-  async (req, res) => {
-    res.json({ success: true, message: 'Password reset successfully.' });
-  }
+  authController.resetPassword
 );
 
 /**
