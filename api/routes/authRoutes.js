@@ -150,6 +150,14 @@ router.put('/change-password', protect,
 );
 
 /**
+ * @route   POST /api/auth/google
+ * @desc    Login / register with Google OAuth access token
+ * @access  Public
+ * @body    { tokenId } — Google access token from @react-oauth/google
+ */
+router.post('/google', authController.googleLogin);
+
+/**
  * @route   POST /api/auth/setup-mfa
  * @desc    Generate MFA secret (TOTP) for HOD/Dean/Director
  * @access  Private (HOD, DSW, DEAN, DIRECTOR, ADMIN)
