@@ -127,14 +127,23 @@ exports.getOverview = async (req, res) => {
     if (campus && campus !== 'ALL') { userQuery.campus = campus; postQuery.campus = campus; }
     if (branch && branch !== 'ALL') { userQuery.branch = branch; postQuery.branch = branch; }
 
-    const [totalUsers, totalPosts, totalCirculars, pendingCirculars] = await Promise.all([
-      User.countDocuments(userQuery),
+    const [totalUsers, totalPosts, totalCirculars, pendingCirculars, communityMembers, onlineUsers] = await Promise.all([
+      User.countDocuments({ ...userQuery, isActive: true }),
       Post.countDocuments({ ...postQuery, status: 'PUBLISHED' }),
       Circular.countDocuments({ status: 'PUBLISHED' }),
       Circular.countDocuments({ status: { $in: ['PENDING_HOD', 'PENDING_DEAN', 'PENDING_DIRECTOR'] } }),
+      User.countDocuments({ joinedCommunity: true, isActive: true }),
+      User.countDocuments({ isOnline: true, isActive: true }),
     ]);
 
-    res.json({ success: true, overview: { totalUsers, totalPosts, totalCirculars, pendingCirculars } });
+    // Campus breakdown live
+    const campusBreakdown = await User.aggregate([
+      { $match: { isActive: true, role: 'STUDENT' } },
+      { $group: { _id: '$campus', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]);
+
+    res.json({ success: true, overview: { totalUsers, totalPosts, totalCirculars, pendingCirculars, communityMembers, onlineUsers, campusBreakdown } });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

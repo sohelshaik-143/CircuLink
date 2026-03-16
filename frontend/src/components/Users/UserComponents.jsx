@@ -10,54 +10,115 @@ import toast from 'react-hot-toast';
 
 // ─── Leaderboard ────────────────────────────────────────────────────────────
 export function Leaderboard() {
+    const { user: currentUser } = useAuth();
     const [leaderboard, setLeaderboard] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [campus, setCampus] = useState('ALL');
+    const [branch, setBranch] = useState('ALL');
 
-    useEffect(() => {
-        usersAPI.getLeaderboard({ limit: 50 })
+    const fetchLeaderboard = (c, b) => {
+        setLoading(true);
+        const params = { limit: 50 };
+        if (c !== 'ALL') params.campus = c;
+        if (b !== 'ALL') params.branch = b;
+        usersAPI.getLeaderboard(params)
             .then(res => setLeaderboard(res.data.leaderboard || []))
             .catch(() => toast.error('Failed to load leaderboard'))
             .finally(() => setLoading(false));
-    }, []);
+    };
 
-    if (loading) return <div style={styles.loading}>Loading Leaderboard...</div>;
+    useEffect(() => { fetchLeaderboard(campus, branch); }, [campus, branch]);
+
+    const rankBg = ['linear-gradient(135deg,#f59e0b,#d97706)', 'linear-gradient(135deg,#94a3b8,#64748b)', 'linear-gradient(135deg,#b45309,#92400e)'];
+    const levelColor = { Beginner: '#10b981', Intermediate: '#f59e0b', Advanced: '#6366f1', Expert: '#ef4444' };
+    const myRank = leaderboard.findIndex(u => u._id === currentUser?._id);
 
     return (
-        <div style={styles.container}>
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card" style={styles.card}>
-                <h1 style={styles.title}>🏆 Academic Reputation Leaderboard</h1>
-                <p style={styles.subtitle}>Top contributors across all campuses</p>
+        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
+            <BackButton />
+            {/* Header */}
+            <div style={{ background: 'linear-gradient(135deg,#0f172a,#1e1b4b)', borderRadius: '1.5rem', padding: '2.5rem', marginBottom: '1.5rem', color: '#fff', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 80% 50%, rgba(99,102,241,0.3), transparent 60%)', pointerEvents: 'none' }} />
+                <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: '0 0 0.4rem', position: 'relative' }}>🏆 Leaderboard</h1>
+                <p style={{ color: 'rgba(255,255,255,0.55)', margin: '0 0 1.5rem', position: 'relative' }}>Live rankings — sorted by reputation points</p>
+                {myRank >= 0 && (
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.1)', borderRadius: '999px', padding: '0.4rem 1rem', fontSize: '0.85rem', fontWeight: 700, position: 'relative' }}>
+                        🎯 Your rank: <strong>#{myRank + 1}</strong> of {leaderboard.length}
+                    </div>
+                )}
+            </div>
 
-                <div style={styles.list}>
-                    {leaderboard.map((u, i) => (
-                        <motion.div
-                            key={u._id}
-                            initial={{ x: -20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: i * 0.05 }}
-                            style={styles.leaderItem}
-                        >
-                            <span style={{ ...styles.rank, background: i === 0 ? '#F59E0B' : i === 1 ? '#94A3B8' : i === 2 ? '#B45309' : '#f1f5f9', color: i < 3 ? '#fff' : '#64748b' }}>
-                                {i + 1}
-                            </span>
-                            <Link to={`/profile/${u._id}`} style={styles.userInfo}>
-                                <div style={styles.avatar}>{u.name[0]}</div>
-                                <div>
-                                    <p style={styles.name}>{u.name}</p>
-                                    <p style={styles.meta}>{u.branch} • {u.campus}</p>
+            {/* Filters */}
+            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                <select value={campus} onChange={e => setCampus(e.target.value)} style={lbS.select}>
+                    <option value="ALL">All Campuses</option>
+                    {['RK Valley', 'Nuzvid', 'Basar', 'Srikakulam', 'Ongole'].map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <select value={branch} onChange={e => setBranch(e.target.value)} style={lbS.select}>
+                    <option value="ALL">All Branches</option>
+                    {['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'CHEM', 'MMT'].map(b => <option key={b} value={b}>{b}</option>)}
+                </select>
+                <span style={{ marginLeft: 'auto', alignSelf: 'center', fontSize: '0.82rem', color: '#64748b', fontWeight: 600 }}>
+                    {leaderboard.length} students ranked
+                </span>
+            </div>
+
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>Loading rankings...</div>
+            ) : leaderboard.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8', border: '2px dashed #e2e8f0', borderRadius: '1rem' }}>No students found for this filter.</div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                    {leaderboard.map((u, i) => {
+                        const isMe = u._id === currentUser?._id;
+                        return (
+                            <motion.div
+                                key={u._id}
+                                initial={{ opacity: 0, x: -16 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.03 }}
+                                style={{ ...lbS.row, ...(isMe ? lbS.myRow : {}) }}
+                            >
+                                <div style={{ ...lbS.rank, background: i < 3 ? rankBg[i] : '#f1f5f9', color: i < 3 ? '#fff' : '#64748b', fontSize: i < 3 ? '1rem' : '0.85rem' }}>
+                                    {i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}
                                 </div>
-                            </Link>
-                            <div style={styles.points}>
-                                <span style={styles.pointVal}>⭐ {u.points}</span>
-                                <span style={styles.levelBadge}>{u.level}</span>
-                            </div>
-                        </motion.div>
-                    ))}
+                                <Link to={`/profile/${u._id}`} style={lbS.info}>
+                                    <div style={lbS.avatar}>
+                                        {u.profilePicture
+                                            ? <img src={`http://localhost:5000${u.profilePicture}`} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                                            : u.name[0]}
+                                    </div>
+                                    <div style={{ minWidth: 0 }}>
+                                        <p style={lbS.name}>{u.name} {isMe && <span style={lbS.youBadge}>You</span>}</p>
+                                        <p style={lbS.meta}>{u.branch} • {u.campus} • {u.collegeId}</p>
+                                    </div>
+                                </Link>
+                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                    <p style={lbS.pts}>⭐ {u.points.toLocaleString()}</p>
+                                    <span style={{ ...lbS.level, background: (levelColor[u.level] || '#10b981') + '20', color: levelColor[u.level] || '#10b981' }}>{u.level}</span>
+                                </div>
+                            </motion.div>
+                        );
+                    })}
                 </div>
-            </motion.div>
+            )}
         </div>
     );
 }
+
+const lbS = {
+    select: { padding: '0.55rem 1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', fontSize: '0.875rem', background: '#fff', cursor: 'pointer', outline: 'none' },
+    row: { display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '1rem 1.25rem', borderRadius: '1rem', background: '#fff', border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' },
+    myRow: { border: '2px solid #6366f1', background: '#faf5ff' },
+    rank: { width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0 },
+    info: { display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0, textDecoration: 'none' },
+    avatar: { width: '42px', height: '42px', borderRadius: '50%', background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.1rem', overflow: 'hidden', flexShrink: 0 },
+    name: { fontWeight: 700, fontSize: '0.95rem', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' },
+    youBadge: { background: '#6366f1', color: '#fff', fontSize: '0.65rem', padding: '1px 6px', borderRadius: '999px', fontWeight: 800 },
+    meta: { fontSize: '0.75rem', color: '#94a3b8', margin: '0.1rem 0 0' },
+    pts: { fontWeight: 800, color: '#d97706', margin: 0, fontSize: '0.95rem' },
+    level: { padding: '2px 8px', borderRadius: '999px', fontSize: '0.68rem', fontWeight: 700 },
+};
 
 // ─── User Profile / Portfolio ───────────────────────────────────────────────
 export function UserProfile() {

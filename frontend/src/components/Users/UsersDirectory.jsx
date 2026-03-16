@@ -61,7 +61,7 @@ export default function UsersDirectory() {
         const matchesSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             u.collegeId.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCampus = filterCampus === 'ALL' || u.campus === filterCampus;
-        return matchesSearch && matchesCampus && u._id !== user?._id;
+        return matchesSearch && matchesCampus;
     });
 
     return (
