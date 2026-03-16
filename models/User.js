@@ -24,10 +24,10 @@ const UserSchema = new mongoose.Schema({
     trim: true,
     validate: {
       validator: function (v) {
-        // Enforce college domain and subdomains (e.g. rguktrkv.ac.in, rgukt.ac.in)
-        return /^[a-z0-9._%+-]+@rgukt([a-z]{3})?\.ac\.in$/i.test(v);
+        // Allow all 4 RGUKT campus domains + base domain
+        return /^[a-z0-9._%+-]+@rgukt([a-z]{2,5})?\.ac\.in$/i.test(v);
       },
-      message: props => `Only college email accounts (@rgukt.ac.in or campus subdomains) are allowed!`
+      message: props => `Only college email accounts (@rguktrkv.ac.in, @rguktrong.ac.in, @rguktskl.ac.in, @rguktnuz.ac.in) are allowed!`
     }
   },
   password: {

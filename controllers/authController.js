@@ -92,12 +92,19 @@ exports.googleLogin = async (req, res) => {
       });
     }
 
+    // Detect campus from email domain
+    const campusMap = {
+      'rguktrkv.ac.in': 'RK Valley',
+      'rguktrong.ac.in': 'Ongole',
+      'rguktskl.ac.in': 'Srikakulam',
+      'rguktnuz.ac.in': 'Nuzvid',
+    };
+    const emailDomain = email.split('@')[1];
+    const campus = campusMap[emailDomain] || 'RK Valley';
+
     let user = await User.findOne({ $or: [{ googleId }, { email }] });
 
     if (!user) {
-      // Create new student user if not exists
-      // Defaulting to STUDENT role. Campus will be auto-detected from email/ID if possible
-      // In a real scenario, we might want to ask for more details
       const collegeId = email.split('@')[0].toUpperCase();
       user = await User.create({
         collegeId,
@@ -106,7 +113,10 @@ exports.googleLogin = async (req, res) => {
         googleId,
         isGoogleUser: true,
         role: 'STUDENT',
-        password: Math.random().toString(36).slice(-10), // Random password
+        campus,
+        branch: 'CSE',
+        year: 'E1',
+        password: Math.random().toString(36).slice(-10),
         profilePicture: picture,
       });
     } else {
