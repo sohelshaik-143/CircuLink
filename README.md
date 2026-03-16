@@ -1,196 +1,208 @@
-# 🗃️ RGUKT Platform — Database & API Reference
+<div align="center">
 
-## 📁 Folder Structure
+# 🎓 CircuLink
 
-```
-rgukt-db-api/
-│
-├── database/
-│   ├── schemas/
-│   │   └── allSchemas.js        ← All 6 MongoDB collection schemas documented
-│   ├── indexes/
-│   │   └── createIndexes.js     ← Run once to create all performance indexes
-│   ├── migrations/
-│   │   └── 001_add_gamification.js  ← DB migrations (up/down)
-│   └── seed/
-│       └── fullSeed.js          ← Seeds 90+ users across all campuses + branches
-│
-├── api/
-│   ├── routes/
-│   │   ├── authRoutes.js        ← 11 auth endpoints (register, login, MFA, refresh, etc.)
-│   │   ├── userRoutes.js        ← 12 user endpoints (follow, leaderboard, admin, etc.)
-│   │   ├── postRoutes.js        ← 15 post endpoints (CRUD, like, bookmark, endorse, etc.)
-│   │   ├── circularRoutes.js    ← 13 circular endpoints (full approval workflow + emergency)
-│   │   └── analyticsAndNotifRoutes.js ← 9 analytics + 5 notification endpoints
-│   ├── validators/
-│   │   └── index.js             ← All express-validator chains for every endpoint
-│   └── docs/
-│       └── api-documentation.json ← Complete structured API docs (all 65+ endpoints)
-│
-├── services/
-│   ├── notificationService.js   ← Centralized notification sending + socket emit
-│   └── gamificationService.js  ← Points, levels, badges, streaks
-│
-└── server.js                    ← Full Express + Socket.IO server (all routes mounted)
-```
+### *The Official Campus Intelligence & Communication Platform for RGUKT*
+
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://reactjs.org)
+[![Node.js](https://img.shields.io/badge/Node.js-18-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![MongoDB](https://img.shields.io/badge/MongoDB-6-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://mongodb.com)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-4-010101?style=for-the-badge&logo=socketdotio&logoColor=white)](https://socket.io)
+[![License](https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge)](LICENSE)
+
+> **CircuLink** bridges the gap between students, faculty, and administration across all four RGUKT campuses — bringing circulars, innovation posts, real-time messaging, and campus analytics into one seamless platform.
 
 ---
 
-## 🗃️ Database: 6 Collections
+</div>
 
-| Collection    | Documents | Purpose |
-|---|---|---|
-| `users`       | ~100      | All roles (Student→Director), gamification, MFA |
-| `posts`       | ~50+      | Innovation, research, projects, ideas |
-| `circulars`   | ~20+      | Official circulars with 3-step approval chain |
-| `comments`    | dynamic   | Threaded comments on posts/circulars |
-| `notifications`| dynamic  | In-app + socket notifications (TTL 30d) |
-| `auditlogs`   | dynamic   | All actions logged (TTL 90d) |
+## ✨ What is CircuLink?
 
-### Total indexes: 37
-- 7 on `users` (unique collegeId, email, role+campus, points for leaderboard)
-- 8 on `posts` (text search, trending, branch+campus+topic)
-- 8 on `circulars` (unique number, status+targets, approval chain)
-- 5 on `comments` (post, circular, author, parent)
-- 4 on `notifications` (recipient+read, TTL 30-day auto-delete)
-- 5 on `auditlogs` (user+action, campus+branch, TTL 90-day)
+CircuLink is a **full-stack campus communication platform** built specifically for the Rajiv Gandhi University of Knowledge Technologies (RGUKT). It replaces fragmented WhatsApp groups and notice boards with a single, secure, role-aware digital campus hub.
+
+Whether you are a student sharing an innovation idea, an HOD approving a circular, or a Director monitoring campus-wide engagement — CircuLink has your workflow covered.
 
 ---
 
-## 🔗 API: 65+ Endpoints
+## 🚀 Features
 
-### Auth (11)
-| Method | Endpoint | Access |
-|---|---|---|
-| POST | /auth/register | Public |
-| POST | /auth/login | Public (+ MFA for HOD/Dean/Director) |
-| POST | /auth/logout | Private |
-| GET | /auth/me | Private |
-| POST | /auth/refresh-token | Public |
-| POST | /auth/forgot-password | Public |
-| PUT | /auth/reset-password/:token | Public |
-| PUT | /auth/change-password | Private |
-| POST | /auth/setup-mfa | Private |
-| POST | /auth/verify-mfa | Private |
-| POST | /auth/disable-mfa | Private |
+### 📋 Smart Circular Management
+- Multi-stage approval workflow: **Student/Faculty → HOD → Dean → Director**
+- Priority tags (URGENT, HIGH, NORMAL), category filters, and read receipts
+- Students can submit circular ideas and suggestions — not just officials
+- Emergency broadcast system for Directors and Security roles
 
-### Users (12)
-| Method | Endpoint | Access |
-|---|---|---|
-| GET | /users | Private |
-| GET | /users/leaderboard | Private |
-| GET | /users/profile | Private |
-| PUT | /users/profile | Private |
-| GET | /users/:id | Private |
-| POST | /users/:id/follow | Private |
-| GET | /users/:id/followers | Private |
-| GET | /users/:id/following | Private |
-| PUT | /users/:id/deactivate | ADMIN, DIRECTOR |
-| PUT | /users/:id/activate | ADMIN |
-| PUT | /users/:id/role | ADMIN |
+### 💡 Innovation Feed
+- Students and faculty post innovations, projects, research, and ideas
+- Like, comment, and **endorse** posts (faculty endorsements carry extra weight)
+- Topic-based trending analytics updated in real time
+- Rich text content with file/image attachments
 
-### Posts (15)
-| Method | Endpoint | Notes |
-|---|---|---|
-| GET | /posts | Public/Private (with filtering) |
-| POST | /posts | +10 points, notifies followers |
-| GET | /posts/trending | Top 10 |
-| GET | /posts/:id | Auto-increments views |
-| PUT | /posts/:id | Saves version history |
-| DELETE | /posts/:id | Soft + hard delete |
-| POST | /posts/:id/like | Toggle, notifies author |
-| POST | /posts/:id/bookmark | Toggle |
-| POST | /posts/:id/endorse | FACULTY+, author gets +50 pts |
-| POST | /posts/:id/comment | +5 points, notifies author |
-| DELETE | /posts/:id/comment/:cid | Soft-delete |
-| POST | /posts/:id/flag | FACULTY+ |
-| POST | /posts/:id/feature | HOD+ |
-| GET | /posts/:id/versions | Version history |
+### 📊 Live Analytics Dashboard
+- Real-time counts: Online users, Community Members, Active Posts
+- Campus-wise and branch-wise engagement breakdown
+- Top trending topics, leaderboard, and audit logs
+- Export data as JSON for reporting (Director/Admin only)
 
-### Circulars (13) — 3-Step Approval Workflow
-| Method | Endpoint | Notes |
-|---|---|---|
-| GET | /circulars | Role-filtered |
-| POST | /circulars | Starts HOD→Dean→Director chain |
-| GET | /circulars/pending | For approvers only |
-| PUT | /circulars/:id/approve | Advances workflow, notifies next |
-| PUT | /circulars/:id/reject | Notifies author |
-| POST | /circulars/:id/read | Mark as read |
-| POST | /circulars/:id/acknowledge | For URGENT circulars |
-| POST | /circulars/emergency | Instant broadcast, skips approval |
-| GET | /circulars/:id | Full details, auto-read |
-| DELETE | /circulars/:id | Archive (soft-delete) |
+### 🔒 Role-Based Access Control
 
-### Analytics (9)
-| Endpoint | Access | Description |
-|---|---|---|
-| GET /analytics/overview | Any | totalUsers, posts, circulars, pending |
-| GET /analytics/branch-activity | Any | Posts/students/faculty per branch |
-| GET /analytics/campus-comparison | DEAN+ | All 4 campuses side-by-side |
-| GET /analytics/topic-trends | Any | Top 12 topics |
-| GET /analytics/engagement-over-time | Any | Daily activity chart |
-| GET /analytics/circular-stats | HOD+ | By category, status, read rates |
-| GET /analytics/leaderboard | Any | Top students by points |
-| GET /analytics/audit-logs | DEAN+ | Full audit trail |
-| GET /analytics/export | DIRECTOR+ | JSON data export |
-
-### Notifications (5)
-| Endpoint | Description |
+| Role | Access Level |
 |---|---|
-| GET /notifications | Paginated, filterable |
-| PUT /notifications/:id/read | Mark single read |
-| PUT /notifications/mark-all-read | Bulk read |
-| DELETE /notifications/:id | Delete one |
-| DELETE /notifications/clear-all | Clear read |
+| Student | Posts, Circulars, Community, Messaging |
+| Faculty | + Endorsements, Circular Drafts |
+| HOD | + Circular Approval (Level 1) |
+| Dean | + Analytics, Audit Logs, Campus Reports |
+| Director | + Emergency Broadcast, Full Export |
+| Admin | Full Platform Access |
+
+### 💬 Real-Time Encrypted Messaging
+- Person-to-person chat within the platform (no external email)
+- Photo and file sharing within the app only
+- Live typing indicators via Socket.IO
+
+### 🏆 Gamification
+- Points awarded for posts, comments, endorsements, and activity
+- Level progression: Beginner → Explorer → Innovator → Pioneer → Legend
+- Auto-badge awards for milestones
+- Live leaderboard per campus and branch
+
+### 🔍 Global Search
+- Instant search across all posts and circulars
+- 300ms debounced search with animated dropdown results
+
+### 📱 Fully Mobile Responsive
+- Hamburger navigation at mobile breakpoints
+- Adaptive grid layouts for all screen sizes
+
+### 🔐 Secure Authentication
+- Google OAuth login with RGUKT domain validation
+- JWT + Refresh Token rotation
+- MFA (TOTP via Google Authenticator) for HOD, Dean, Director roles
+- Forgot password flow with secure crypto token
 
 ---
 
-## 🔌 Real-Time (Socket.IO)
+## 🏛️ Supported Campuses
 
-**Client → Server events:**
-- `join(userId)` — subscribe to personal room
-- `join_branch(branch)` — subscribe to branch events
-- `join_campus(campus)` — subscribe to campus events
+| Campus | Email Domain |
+|---|---|
+| RK Valley | `@rguktrkv.ac.in` |
+| Ongole | `@rguktrong.ac.in` |
+| Srikakulam | `@rguktskl.ac.in` |
+| Nuzvid | `@rguktnuz.ac.in` |
 
-**Server → Client events:**
-- `notification` — new notification
-- `emergency` — emergency broadcast
-- `new_circular` — new circular published
-- `new_post` — new post from followed user
+> Only valid RGUKT email addresses are accepted for student registration and Google Sign-In.
 
 ---
 
-## ⚡ Quick Setup
+## 🛠️ Tech Stack
 
+**Frontend**
+- React 18, React Router v6
+- Framer Motion (animations)
+- Socket.IO Client
+- Axios with JWT interceptors & auto token refresh
+- `@react-oauth/google` for Google Sign-In
+- React Hot Toast
+
+**Backend**
+- Node.js + Express.js
+- MongoDB + Mongoose
+- Socket.IO (real-time presence & messaging)
+- JWT + Refresh Token auth
+- Speakeasy (TOTP/MFA)
+- Multer (file uploads)
+- Helmet, CORS, Rate Limiting
+
+---
+
+## ⚡ Getting Started
+
+### Prerequisites
+- Node.js 18+
+- MongoDB (local or Atlas)
+- A Google OAuth Client ID
+
+### 1. Clone the Repository
 ```bash
-# 1. Install
+git clone https://github.com/sohelshaik-143/CircuLink.git
+cd CircuLink
+```
+
+### 2. Backend Setup
+```bash
 npm install
 
-# 2. Configure
-cp .env.example .env
-# Edit MONGO_URI and JWT secrets
+# Create a .env file with:
+# MONGO_URI=your_mongodb_uri
+# JWT_SECRET=your_jwt_secret
+# REFRESH_TOKEN_SECRET=your_refresh_secret
+# CLIENT_URL=http://localhost:3000
+```
 
-# 3. Create indexes (run once)
-node database/indexes/createIndexes.js
+### 3. Frontend Setup
+```bash
+cd frontend
+npm install
+```
 
-# 4. Seed data
-node database/seed/fullSeed.js
-
-# 5. Start server
+### 4. Run the App
+```bash
+# Backend — port 5000
 npm run dev
+
+# Frontend — port 3000
+cd frontend && npm start
+```
+
+Open [http://localhost:3000](http://localhost:3000) and sign in with your RGUKT college email.
+
+---
+
+## 📁 Project Structure
+
+```
+CircuLink/
+├── api/
+│   └── routes/          # Express route files (auth, posts, circulars, analytics...)
+├── controllers/         # Business logic (authController, etc.)
+├── middleware/          # JWT protect, role-based access control
+├── models/              # Mongoose schemas (User, Post, Circular, Message...)
+├── services/            # NotificationService, GamificationService
+├── uploads/             # Multer file destination
+├── server.js            # Express + Socket.IO entry point
+└── frontend/
+    └── src/
+        ├── api/         # Axios instance + all API modules
+        ├── components/  # Auth, Dashboard, Posts, Circulars, Analytics...
+        ├── context/     # AuthContext, NotificationContext
+        └── App.jsx      # Router and layout
 ```
 
 ---
 
-## 📋 Demo Credentials (after seed)
+## 🌟 What Makes It Different
 
-| Role | College ID | Password |
-|---|---|---|
-| Student | r22,n22,o22,s22| student123 |
-| Faculty | F001CSE | faculty123 |
-| HOD | HOD001CSE | hod12345 |
-| DSW | DSW001 | dsw12345 |
-| Dean | DEAN001 | dean1234 |
-| Director | DIR001 | director1 |
-| Security | SEC001 | security1 |
-| Admin | ADM001 | admin1234 |
+- **Zero predefined accounts** — every user registers with their real RGUKT identity
+- **Community opt-in** — students choose to join the campus community, not forced in
+- **Profile setup flow** — new users complete their profile after first login; name and ID are read-only from college records
+- **Live online presence** — see who's active on campus in real time across the community page
+- **Full audit trail** — every significant action logged for compliance and transparency
+
+---
+
+## 👤 Author
+
+**Sohel Shaik**
+Student, RGUKT
+[github.com/sohelshaik-143](https://github.com/sohelshaik-143)
+
+---
+
+<div align="center">
+
+Built with dedication for the RGUKT community 🎓
+
+*"Connecting Knowledge. Empowering Campus."*
+
+</div>
