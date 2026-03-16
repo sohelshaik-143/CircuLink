@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -21,7 +22,7 @@ const CAMPUS_DATA = {
 };
 
 export default function Login() {
-  const { login, register } = useAuth();
+  const { login, register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -35,6 +36,8 @@ export default function Login() {
 
   const BRANCHES = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'MME', 'CHEM', 'PUC'];
   const ROLES = ['STUDENT', 'FACULTY', 'HOD', 'DEAN', 'DIRECTOR', 'ADMIN'];
+
+  const STUDENT_DOMAINS = ['@rguktrkv.ac.in', '@rguktrong.ac.in', '@rguktskl.ac.in', '@rguktnuz.ac.in'];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -61,6 +64,14 @@ export default function Login() {
           navigate('/dashboard');
         }
       } else {
+        if (form.role === 'STUDENT') {
+          const validDomain = STUDENT_DOMAINS.some(d => form.email.endsWith(d));
+          if (!validDomain) {
+            toast.error('Students must use their college email (e.g. r220379@rguktrkv.ac.in, @rguktrong.ac.in, @rguktskl.ac.in, @rguktnuz.ac.in)');
+            setLoading(false);
+            return;
+          }
+        }
         await register(form);
         navigate('/dashboard');
       }
@@ -71,24 +82,20 @@ export default function Login() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      setLoading(true);
-      // In a real app, you'd use a Google Login library here.
-      // We'll simulate the token error fix by showing the intended flow.
-      toast.loading('Connecting to Google...', { id: 'google' });
-
-      // Placeholder for Google Auth Response
-      // const googleResponse = await someGoogleLib.login();
-      // const result = await loginWithGoogle(googleResponse.tokenId);
-
-      toast.error('Google OAuth requires Client ID configuration in .env', { id: 'google' });
-    } catch (err) {
-      toast.error('Google Sign-In Failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setLoading(true);
+        await loginWithGoogle(tokenResponse.access_token);
+        navigate('/dashboard');
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Google Sign-In Failed');
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => toast.error('Google Sign-In was cancelled or failed'),
+  });
 
   const quickLogin = (id, pw) => {
     const prefix = id.charAt(0).toUpperCase();
@@ -169,7 +176,14 @@ export default function Login() {
                     </div>
                     <div style={styles.field}>
                       <label style={styles.label}>Email Address</label>
-                      <input name="email" type="email" value={form.email} onChange={handleChange} required style={styles.input} className="glass" />
+                      <input name="email" type="email" value={form.email} onChange={handleChange} required style={styles.input} className="glass"
+                        placeholder={form.role === 'STUDENT' ? 'e.g. r220379@rguktrkv.ac.in' : 'your email'}
+                      />
+                      {form.role === 'STUDENT' && (
+                        <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginLeft: '0.5rem' }}>
+                          Use your college email: @rguktrkv.ac.in / @rguktrong.ac.in / @rguktskl.ac.in / @rguktnuz.ac.in
+                        </p>
+                      )}
                     </div>
                   </>
                 )}
@@ -292,7 +306,8 @@ export default function Login() {
                     <motion.button
                       type="button"
                       whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
-                      onClick={handleGoogleLogin}
+                      onClick={() => googleLogin()}
+                      disabled={loading}
                       style={styles.googleBtn}
                     >
                       <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="G" style={styles.googleIcon} />

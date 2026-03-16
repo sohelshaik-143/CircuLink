@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 
@@ -118,6 +119,7 @@ function AppRoutes() {
 
 export default function App() {
   return (
+    <GoogleOAuthProvider clientId="254643186728-8ovhfanc5rv71099kh67v3s6iqua32vb.apps.googleusercontent.com">
     <AuthProvider>
       <BrowserRouter>
         <NotificationProvider>
@@ -136,6 +138,7 @@ export default function App() {
         </NotificationProvider>
       </BrowserRouter>
     </AuthProvider>
+    </GoogleOAuthProvider>
   );
 }
 

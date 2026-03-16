@@ -73,6 +73,16 @@ export const AuthProvider = ({ children }) => {
     return data;
   }, []);
 
+  const loginWithGoogle = useCallback(async (tokenId) => {
+    const { data } = await authAPI.googleLogin(tokenId);
+    localStorage.setItem('token', data.token);
+    if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+    setUser(data.user);
+    if (data.user.theme) setDarkMode(data.user.theme === 'dark');
+    toast.success(`Welcome, ${data.user.name}!`);
+    return data;
+  }, []);
+
   const logout = useCallback(async () => {
     try { await authAPI.logout(); } catch (_) { }
     localStorage.clear();
@@ -88,7 +98,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user, loading, darkMode,
-    setDarkMode, login, logout, register, updateUser,
+    setDarkMode, login, logout, register, loginWithGoogle, updateUser,
     isLoggedIn: !!user,
     isRole: (...roles) => user && roles.includes(user.role),
     canApprove: user && ['HOD', 'DSW', 'DEAN', 'DIRECTOR'].includes(user.role),

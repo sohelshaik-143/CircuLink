@@ -4,10 +4,28 @@ const auth = require('../middleware/auth');
 const speakeasy = require('speakeasy');
 const { OAuth2Client } = require('google-auth-library');
 
+const STUDENT_ALLOWED_DOMAINS = [
+  '@rguktrkv.ac.in',
+  '@rguktrong.ac.in',
+  '@rguktskl.ac.in',
+  '@rguktnuz.ac.in',
+];
+
 // @route   POST /api/auth/register
 exports.register = async (req, res) => {
   try {
     const { collegeId, email, password, name, role, branch, campus, year, section } = req.body;
+
+    // Students must use their college email only
+    if (role === 'STUDENT') {
+      const isValidDomain = STUDENT_ALLOWED_DOMAINS.some(domain => email.endsWith(domain));
+      if (!isValidDomain) {
+        return res.status(400).json({
+          success: false,
+          message: 'Students must register with their college email (e.g. r220379@rguktrkv.ac.in, @rguktrong.ac.in, @rguktskl.ac.in, @rguktnuz.ac.in).',
+        });
+      }
+    }
 
     const existingUser = await User.findOne({ $or: [{ email }, { collegeId }] });
     if (existingUser) {
@@ -46,18 +64,32 @@ exports.register = async (req, res) => {
 // @route   POST /api/auth/google
 exports.googleLogin = async (req, res) => {
   try {
-    const { tokenId } = req.body;
-    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const { tokenId } = req.body; // tokenId is an access_token from @react-oauth/google
 
-    const ticket = await client.verifyIdToken({
-      idToken: tokenId,
-      audience: process.env.GOOGLE_CLIENT_ID,
+    // Fetch user info using the access token
+    const https = require('https');
+    const googleUserInfo = await new Promise((resolve, reject) => {
+      https.get(
+        `https://www.googleapis.com/oauth2/v3/userinfo`,
+        { headers: { Authorization: `Bearer ${tokenId}` } },
+        (resp) => {
+          let data = '';
+          resp.on('data', chunk => { data += chunk; });
+          resp.on('end', () => {
+            if (resp.statusCode !== 200) return reject(new Error('Invalid Google token'));
+            resolve(JSON.parse(data));
+          });
+        }
+      ).on('error', reject);
     });
+    const { email, name, sub: googleId, picture } = googleUserInfo;
 
-    const { email, name, sub: googleId, picture } = ticket.getAttributes().payload;
-
-    if (!email.endsWith('@rgukt.ac.in') && !email.includes('.ac.in')) {
-      return res.status(400).json({ success: false, message: 'Only @rgukt.ac.in accounts are allowed.' });
+    const isValidStudentDomain = STUDENT_ALLOWED_DOMAINS.some(domain => email.endsWith(domain));
+    if (!isValidStudentDomain) {
+      return res.status(400).json({
+        success: false,
+        message: 'Only college email accounts are allowed (@rguktrkv.ac.in, @rguktrong.ac.in, @rguktskl.ac.in, @rguktnuz.ac.in).',
+      });
     }
 
     let user = await User.findOne({ $or: [{ googleId }, { email }] });
