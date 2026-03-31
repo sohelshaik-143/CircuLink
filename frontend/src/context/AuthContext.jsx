@@ -53,8 +53,8 @@ export const AuthProvider = ({ children }) => {
     }
   }, [darkMode, user?._id]); // Use user._id to prevent loops if other user data changes
 
-  const login = useCallback(async (collegeId, password, mfaToken) => {
-    const { data } = await authAPI.login({ collegeId, password, mfaToken });
+  const login = useCallback(async (loginId, password, mfaToken) => {
+    const { data } = await authAPI.login({ loginId, password, mfaToken });
     if (data.requiresMFA) return { requiresMFA: true };
     localStorage.setItem('token', data.token);
     localStorage.setItem('refreshToken', data.refreshToken);

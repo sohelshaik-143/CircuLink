@@ -47,6 +47,19 @@ export default function DirectorDashboard() {
         </div>
       </div>
 
+      <div className="glass-card" style={styles.previewCard}>
+        <div style={styles.sectionHeader}>
+          <h2 style={styles.sectionTitle}>Dashboard View Switcher</h2>
+          <Link to="/dashboard" style={styles.link}>Back to Director View</Link>
+        </div>
+        <p style={styles.previewText}>Director access includes all role environments. Preview any assigned dashboard below.</p>
+        <div style={styles.previewActions}>
+          <Link to="/dashboard?view=security" style={styles.previewBtn}>Security Dashboard</Link>
+          <Link to="/dashboard?view=dean-academics" style={styles.previewBtn}>Dean of Academics Dashboard</Link>
+          <Link to="/dashboard?view=dean-welfare" style={styles.previewBtn}>Dean of Student Welfare Dashboard</Link>
+        </div>
+      </div>
+
       <div style={styles.mainGrid}>
         <div className="glass-card" style={styles.section}>
           <div style={styles.sectionHeader}>
@@ -88,6 +101,10 @@ const styles = {
   title: { fontSize: '2.5rem', fontWeight: 800, margin: 0, color: 'var(--slate-900)' },
   subtitle: { color: 'var(--slate-500)', fontSize: '1.1rem' },
   statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' },
+  previewCard: { padding: '1.5rem', marginBottom: '2rem' },
+  previewText: { margin: '0.25rem 0 1rem', color: 'var(--slate-500)', fontSize: '0.9rem' },
+  previewActions: { display: 'flex', gap: '0.75rem', flexWrap: 'wrap' },
+  previewBtn: { padding: '0.65rem 1rem', background: 'var(--slate-50)', color: 'var(--slate-700)', borderRadius: '0.6rem', textDecoration: 'none', fontWeight: 700, border: '1px solid var(--slate-100)', fontSize: '0.85rem' },
   statCard: { padding: '1.5rem', textAlign: 'center' },
   statLabel: { color: 'var(--slate-500)', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 },
   statValue: { fontSize: '2rem', fontWeight: 800, color: 'var(--primary)', margin: 0 },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, Link, useSearchParams } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -22,6 +22,7 @@ import UsersDirectory from './components/Users/UsersDirectory';
 import Emergency from './components/Director/Emergency';
 import CircularDetail from './components/Circulars/CircularDetail';
 import DirectorDashboard from './components/Dashboard/DirectorDashboard';
+import { SecurityDashboard, DeanAcademicsDashboard, DeanStudentWelfareDashboard } from './components/Dashboard/RoleSpecificDashboards';
 
 // Page wrapper for animations
 const PageWrapper = ({ children }) => (
@@ -80,9 +81,31 @@ function AppLayout({ children }) {
 // Dashboard router based on role
 function Dashboard() {
   const { user } = useAuth();
-  if (['DIRECTOR', 'DEAN', 'DSW', 'ADMIN'].includes(user?.role)) {
+  const [searchParams] = useSearchParams();
+  const directorPreview = searchParams.get('view');
+
+  if (['DIRECTOR', 'ADMIN'].includes(user?.role) && directorPreview) {
+    if (directorPreview === 'security') return <SecurityDashboard />;
+    if (directorPreview === 'dean-academics') return <DeanAcademicsDashboard />;
+    if (directorPreview === 'dean-welfare') return <DeanStudentWelfareDashboard />;
+  }
+
+  if (['DIRECTOR', 'ADMIN'].includes(user?.role)) {
     return <DirectorDashboard />;
   }
+
+  if (user?.role === 'SECURITY') {
+    return <SecurityDashboard />;
+  }
+
+  if (user?.role === 'DEAN') {
+    return <DeanAcademicsDashboard />;
+  }
+
+  if (user?.role === 'DSW') {
+    return <DeanStudentWelfareDashboard />;
+  }
+
   return <StudentDashboard />;
 }
 
@@ -100,7 +123,7 @@ function AppRoutes() {
           <Route path="/posts/new" element={<ProtectedRoute><PageWrapper><PostForm /></PageWrapper></ProtectedRoute>} />
           <Route path="/circulars" element={<ProtectedRoute><PageWrapper><CircularList /></PageWrapper></ProtectedRoute>} />
           <Route path="/circulars/:id" element={<ProtectedRoute><PageWrapper><CircularDetail /></PageWrapper></ProtectedRoute>} />
-          <Route path="/analytics" element={<ProtectedRoute><PageWrapper><AnalyticsDashboard /></PageWrapper></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute roles={['DEAN', 'DSW', 'DIRECTOR', 'ADMIN']}><PageWrapper><AnalyticsDashboard /></PageWrapper></ProtectedRoute>} />
           <Route path="/posts/:id" element={<ProtectedRoute><PageWrapper><PostDetail /></PageWrapper></ProtectedRoute>} />
           <Route path="/leaderboard" element={<ProtectedRoute><PageWrapper><Leaderboard /></PageWrapper></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute><PageWrapper><UsersDirectory /></PageWrapper></ProtectedRoute>} />

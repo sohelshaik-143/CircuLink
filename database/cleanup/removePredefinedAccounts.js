@@ -12,7 +12,7 @@ async function cleanupPredefinedAccounts() {
   const User = require('../../models/User');
 
   // Real RGUKT college email domains
-  const validDomains = ['rguktrkv.ac.in', 'rguktrong.ac.in', 'rguktskl.ac.in', 'rguktnuz.ac.in'];
+  const validDomains = ['rguktrkv.ac.in', 'rguktong.ac.in', 'rguktskl.ac.in', 'rguktnuz.ac.in'];
 
   // Find accounts that don't belong to valid RGUKT domains
   const predefinedUsers = await User.find({

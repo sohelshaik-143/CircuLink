@@ -74,16 +74,29 @@ export default function Navbar() {
     setShowSearch(false);
   };
 
-  const navLinks = [
-    { to: '/dashboard', label: 'Dashboard' },
-    { to: '/posts', label: 'Innovations' },
-    { to: '/circulars', label: 'Circulars' },
-    ...((['HOD', 'DSW', 'DEAN', 'DIRECTOR'].includes(user?.role))
-      ? [{ to: '/circulars?status=PENDING', label: 'Approvals' }] : []),
-    ...((['SECURITY', 'DEAN', 'DIRECTOR', 'ADMIN'].includes(user?.role))
-      ? [{ to: '/emergency', label: '🚨 Emergency' }] : []),
-    { to: '/analytics', label: 'Analytics' },
-  ];
+  const navLinks = (() => {
+    if (user?.role === 'SECURITY') {
+      return [
+        { to: '/dashboard', label: 'Dashboard' },
+        { to: '/emergency', label: '🚨 Emergency' },
+        { to: '/notifications', label: 'Security Updates' },
+      ];
+    }
+
+    const links = [
+      { to: '/dashboard', label: 'Dashboard' },
+      { to: '/posts', label: 'Innovations' },
+      { to: '/circulars', label: 'Circulars' },
+      ...((['HOD', 'DSW', 'DEAN', 'DIRECTOR'].includes(user?.role))
+        ? [{ to: '/circulars?status=PENDING', label: 'Approvals' }] : []),
+      ...((['SECURITY', 'DEAN', 'DSW', 'DIRECTOR', 'ADMIN'].includes(user?.role))
+        ? [{ to: '/emergency', label: '🚨 Emergency' }] : []),
+      ...((['DEAN', 'DSW', 'DIRECTOR', 'ADMIN'].includes(user?.role))
+        ? [{ to: '/analytics', label: 'Analytics' }] : []),
+    ];
+
+    return links;
+  })();
 
   return (
     <>

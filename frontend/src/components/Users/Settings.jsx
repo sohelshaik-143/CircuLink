@@ -34,12 +34,41 @@ export default function Settings() {
         }
     };
 
+    const roleConfig = {
+        DIRECTOR: {
+            heading: 'Director Control Settings',
+            message: 'Full platform access is enabled. You can supervise all role dashboards and administrative modules.'
+        },
+        SECURITY: {
+            heading: 'Security Operations Settings',
+            message: 'Access is optimized for security updates, emergency broadcasts, and operational notifications.'
+        },
+        DEAN: {
+            heading: 'Dean of Academics Settings',
+            message: 'Access is focused on academic approvals, analytics oversight, and institutional governance workflows.'
+        },
+        DSW: {
+            heading: 'Dean of Student Welfare Settings',
+            message: 'Access is focused on student welfare approvals, alerts, and welfare communication workflows.'
+        },
+    };
+
+    const currentRoleConfig = roleConfig[user?.role] || {
+        heading: `${user?.role || 'User'} Settings`,
+        message: 'Your account settings are configured based on your role permissions.'
+    };
+
     return (
         <div style={styles.container}>
             <BackButton />
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card" style={styles.card}>
                 <h1 style={styles.title}>⚙️ Account Settings</h1>
                 <p style={styles.subtitle}>Manage your preferences, notifications, and security</p>
+
+                <div style={styles.roleBanner}>
+                    <h3 style={styles.roleBannerTitle}>{currentRoleConfig.heading}</h3>
+                    <p style={styles.roleBannerText}>{currentRoleConfig.message}</p>
+                </div>
 
                 {/* Account Updation Section */}
                 <div style={styles.settingsSection}>
@@ -114,6 +143,24 @@ const styles = {
     card: { padding: '2.5rem' },
     title: { fontSize: '1.75rem', fontWeight: 800, margin: 0, color: '#1e293b' },
     subtitle: { color: '#64748b', marginBottom: '2rem' },
+    roleBanner: {
+        marginBottom: '1.5rem',
+        padding: '1rem 1.1rem',
+        borderRadius: '0.75rem',
+        background: '#eff6ff',
+        border: '1px solid #bfdbfe'
+    },
+    roleBannerTitle: {
+        margin: 0,
+        color: '#1e3a8a',
+        fontSize: '1rem',
+        fontWeight: 800
+    },
+    roleBannerText: {
+        margin: '0.4rem 0 0',
+        color: '#334155',
+        fontSize: '0.9rem'
+    },
     settingsSection: { marginBottom: '2rem', paddingBottom: '1.5rem', borderBottom: '1px solid #e2e8f0' },
     sectionTitle: { fontSize: '1.1rem', fontWeight: 700, marginBottom: '1.25rem', color: '#334155' },
     row: { display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', color: '#475569' },

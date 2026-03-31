@@ -6,7 +6,7 @@ const { OAuth2Client } = require('google-auth-library');
 
 const STUDENT_ALLOWED_DOMAINS = [
   '@rguktrkv.ac.in',
-  '@rguktrong.ac.in',
+  '@rguktong.ac.in',
   '@rguktskl.ac.in',
   '@rguktnuz.ac.in',
 ];
@@ -15,24 +15,39 @@ const STUDENT_ALLOWED_DOMAINS = [
 exports.register = async (req, res) => {
   try {
     const { collegeId, email, password, name, role, branch, campus, year, section } = req.body;
+    const normalizedEmail = String(email || '').toLowerCase().trim();
+    let normalizedCollegeId = String(collegeId || '').trim().toUpperCase();
+
+    // For authorities, allow empty collegeId and derive a valid identifier from email.
+    if (role !== 'STUDENT' && !normalizedCollegeId) {
+      const emailPrefix = normalizedEmail.split('@')[0] || 'AUTHUSER';
+      normalizedCollegeId = emailPrefix.replace(/[^a-z0-9_]/gi, '').toUpperCase().slice(0, 20);
+      if (!normalizedCollegeId || normalizedCollegeId.length < 2) {
+        normalizedCollegeId = `AU${Date.now().toString().slice(-6)}`;
+      }
+    }
 
     // Students must use their college email only
     if (role === 'STUDENT') {
-      const isValidDomain = STUDENT_ALLOWED_DOMAINS.some(domain => email.endsWith(domain));
+      if (!normalizedCollegeId) {
+        return res.status(400).json({ success: false, message: 'College ID is required for student registration.' });
+      }
+
+      const isValidDomain = STUDENT_ALLOWED_DOMAINS.some(domain => normalizedEmail.endsWith(domain));
       if (!isValidDomain) {
         return res.status(400).json({
           success: false,
-          message: 'Students must register with their college email (e.g. r220379@rguktrkv.ac.in, @rguktrong.ac.in, @rguktskl.ac.in, @rguktnuz.ac.in).',
+          message: 'Students must register with their college email (e.g. r220379@rguktrkv.ac.in, @rguktong.ac.in, @rguktskl.ac.in, @rguktnuz.ac.in).',
         });
       }
     }
 
-    const existingUser = await User.findOne({ $or: [{ email }, { collegeId }] });
+    const existingUser = await User.findOne({ $or: [{ email: normalizedEmail }, { collegeId: normalizedCollegeId }] });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'User with this ID or email already exists.' });
     }
 
-    const user = await User.create({ collegeId, email, password, name, role, branch, campus, year, section });
+    const user = await User.create({ collegeId: normalizedCollegeId, email: normalizedEmail, password, name, role, branch, campus, year, section });
 
     await AuditLog.create({
       user: user._id, action: 'REGISTER',
@@ -90,14 +105,14 @@ exports.googleLogin = async (req, res) => {
     if (!isValidStudentDomain) {
       return res.status(400).json({
         success: false,
-        message: 'Only college email accounts are allowed (@rguktrkv.ac.in, @rguktrong.ac.in, @rguktskl.ac.in, @rguktnuz.ac.in).',
+        message: 'Only college email accounts are allowed (@rguktrkv.ac.in, @rguktong.ac.in, @rguktskl.ac.in, @rguktnuz.ac.in).',
       });
     }
 
     // Detect campus from email domain
     const campusMap = {
       'rguktrkv.ac.in': 'RK Valley',
-      'rguktrong.ac.in': 'Ongole',
+      'rguktong.ac.in': 'Ongole',
       'rguktskl.ac.in': 'Srikakulam',
       'rguktnuz.ac.in': 'Nuzvid',
     };
@@ -154,13 +169,18 @@ exports.googleLogin = async (req, res) => {
 // @route   POST /api/auth/login
 exports.login = async (req, res) => {
   try {
-    const { collegeId, password, mfaToken } = req.body;
+    const { loginId, collegeId, email, password, mfaToken } = req.body;
+    const identifier = String(loginId || email || collegeId || '').trim();
 
-    if (!collegeId || !password) {
-      return res.status(400).json({ success: false, message: 'Please provide College ID and password.' });
+    if (!identifier || !password) {
+      return res.status(400).json({ success: false, message: 'Please provide College ID or email and password.' });
     }
 
-    const user = await User.findOne({ collegeId: collegeId.toUpperCase() }).select('+password +mfaSecret');
+    const lookup = identifier.includes('@')
+      ? { email: identifier.toLowerCase() }
+      : { collegeId: identifier.toUpperCase() };
+
+    const user = await User.findOne(lookup).select('+password +mfaSecret');
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ success: false, message: 'Invalid credentials.' });
     }

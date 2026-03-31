@@ -17,7 +17,7 @@ const UserSchema = {
   // Role & Academic Info
   role: String,             // STUDENT | FACULTY | HOD | DSW | DEAN | DIRECTOR | SECURITY | ADMIN
   branch: String,           // CSE | ECE | EEE | MECH | CIVIL | CHEM | MMT
-  campus: String,           // RK Valley | Nuzvid | Basar | Srikakulam
+  campus: String,           // RK Valley | Nuzvid | Basar | Srikakulam | ongole
   year: String,             // PUC-1 | PUC-2 | E1 | E2 | E3 | E4 (STUDENT only)
   section: String,          // "A", "B", "C"
   department: String,       // For faculty: "Computer Science"

@@ -21,7 +21,7 @@ export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
-    collegeId: '', password: '', mfaToken: '', campus: '',
+    collegeId: '', loginEmail: '', password: '', mfaToken: '', campus: '',
     name: '', email: '', role: 'STUDENT', branch: '', year: '', section: ''
   });
   const [detectedCampus, setDetectedCampus] = useState(null);
@@ -35,7 +35,7 @@ export default function Login() {
   const [forgotStep, setForgotStep] = useState('email'); // 'email' | 'reset' | 'done'
 
   const BRANCHES = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'MME', 'CHEM', 'PUC'];
-  const ROLES = ['STUDENT', 'FACULTY', 'HOD', 'DEAN', 'DIRECTOR', 'ADMIN'];
+  const ROLES = ['STUDENT', 'FACULTY', 'HOD', 'DSW', 'DEAN', 'DIRECTOR', 'SECURITY', 'ADMIN'];
 
   const STUDENT_DOMAINS = ['@rguktrkv.ac.in', '@rguktrong.ac.in', '@rguktskl.ac.in', '@rguktnuz.ac.in'];
 
@@ -56,7 +56,8 @@ export default function Login() {
     setLoading(true);
     try {
       if (isLogin) {
-        const result = await login(form.collegeId, form.password, step === 'mfa' ? form.mfaToken : undefined);
+        const loginId = (form.loginEmail || form.collegeId || '').trim();
+        const result = await login(loginId, form.password, step === 'mfa' ? form.mfaToken : undefined);
         if (result?.requiresMFA) {
           setStep('mfa');
           toast('Verification required', { icon: '🔐' });
@@ -285,29 +286,76 @@ export default function Login() {
                   </>
                 )}
 
-                <div style={styles.field}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <label style={styles.label}>College ID</label>
+                {isLogin ? (
+                  <div style={styles.identifierPanel} className="glass">
+                    <div style={styles.identifierHeader}>
+                      <p style={styles.identifierTitle}>Login Identifier</p>
+                      <span style={styles.identifierPill}>Use any one</span>
+                    </div>
+
+                    <div style={styles.identifierGrid}>
+                      <div style={styles.field}>
+                        <label style={styles.label}>College ID</label>
+                        <input
+                          name="collegeId"
+                          value={form.collegeId}
+                          onChange={handleChange}
+                          placeholder="e.g. R220379"
+                          style={styles.input}
+                          className="glass"
+                        />
+                      </div>
+
+                      <div style={styles.field}>
+                        <label style={styles.label}>Authority Email</label>
+                        <input
+                          type="email"
+                          name="loginEmail"
+                          value={form.loginEmail}
+                          onChange={handleChange}
+                          placeholder=""
+                          style={styles.input}
+                          className="glass"
+                        />
+                      </div>
+                    </div>
+
+                    <p style={styles.identifierHint}>Use College ID or Email to log in. Email is useful for higher authorities without a college ID.</p>
                     {detectedCampus && (
-                      <motion.span
+                      <motion.p
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        style={{ ...styles.campusNode, color: detectedCampus.color }}
+                        style={{ ...styles.campusNode, ...styles.identifierCampus, color: detectedCampus.color }}
                       >
-                        {detectedCampus.icon} {detectedCampus.name} Detected
-                      </motion.span>
+                        {detectedCampus.icon} {detectedCampus.name} detected from College ID
+                      </motion.p>
                     )}
                   </div>
-                  <input
-                    name="collegeId"
-                    value={form.collegeId}
-                    onChange={handleChange}
-                    placeholder="e.g. R220379"
-                    required
-                    style={styles.input}
-                    className="glass"
-                  />
-                </div>
+                ) : (
+                  <div style={styles.field}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <label style={styles.label}>{form.role === 'STUDENT' ? 'College ID' : 'College ID (Optional)'}</label>
+                      {detectedCampus && (
+                        <motion.span
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          style={{ ...styles.campusNode, color: detectedCampus.color }}
+                        >
+                          {detectedCampus.icon} {detectedCampus.name} Detected
+                        </motion.span>
+                      )}
+                    </div>
+                    <input
+                      name="collegeId"
+                      value={form.collegeId}
+                      onChange={handleChange}
+                      placeholder={form.role === 'STUDENT' ? 'e.g. R220379' : 'Optional for higher authorities'}
+                      required={form.role === 'STUDENT'}
+                      style={styles.input}
+                      className="glass"
+                    />
+                  </div>
+                )}
 
                 <div style={styles.field}>
                   <label style={styles.label}>Campus (Auto-detects from ID)</label>
@@ -527,6 +575,18 @@ const styles = {
   },
   form: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
   field: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
+  identifierPanel: {
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '1.25rem',
+    padding: '1rem',
+    background: 'rgba(255,255,255,0.02)'
+  },
+  identifierHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' },
+  identifierTitle: { margin: 0, fontSize: '0.85rem', color: 'var(--slate-300)', fontWeight: 700, letterSpacing: '0.02em' },
+  identifierPill: { fontSize: '0.68rem', padding: '0.25rem 0.55rem', borderRadius: '999px', background: 'rgba(99, 102, 241, 0.15)', color: '#c7d2fe', border: '1px solid rgba(129, 140, 248, 0.35)', fontWeight: 700, textTransform: 'uppercase' },
+  identifierGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' },
+  identifierHint: { margin: '0.35rem 0 0', color: '#94a3b8', fontSize: '0.74rem', lineHeight: 1.45 },
+  identifierCampus: { marginTop: '0.45rem', marginLeft: '0.1rem' },
   label: { fontSize: '0.9rem', fontWeight: 600, color: 'var(--slate-300)', marginLeft: '0.5rem' },
   campusNode: { fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' },
   input: {

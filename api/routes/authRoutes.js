@@ -13,7 +13,7 @@ const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,    // 15 min
   max: 10,
   message: { success: false, message: 'Too many login attempts. Try again in 15 minutes.' },
-  keyGenerator: (req) => req.body.collegeId || req.ip,
+  keyGenerator: (req) => req.body.loginId || req.body.email || req.body.collegeId || req.ip,
 });
 
 const registerLimiter = rateLimit({
@@ -24,7 +24,18 @@ const registerLimiter = rateLimit({
 
 // ─── Validators ──────────────────────────────────────────────────────────────
 const registerValidator = [
-  body('collegeId').notEmpty().trim().toUpperCase().withMessage('College ID is required'),
+  body('collegeId')
+    .custom((value, { req }) => {
+      const role = String(req.body.role || '').toUpperCase();
+      if (role === 'STUDENT' && !String(value || '').trim()) {
+        throw new Error('College ID is required for students');
+      }
+      return true;
+    })
+    .bail()
+    .optional()
+    .trim()
+    .toUpperCase(),
   body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('name').notEmpty().trim().withMessage('Name is required'),
@@ -37,7 +48,26 @@ const registerValidator = [
 ];
 
 const loginValidator = [
-  body('collegeId').notEmpty().trim().withMessage('College ID required'),
+  body('loginId')
+    .optional()
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('Login ID must be at least 2 characters'),
+  body('collegeId')
+    .optional()
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('College ID must be at least 2 characters'),
+  body('email')
+    .optional()
+    .isEmail()
+    .withMessage('Invalid email format'),
+  body().custom((value, { req }) => {
+    if (!req.body.loginId && !req.body.collegeId && !req.body.email) {
+      throw new Error('College ID or email is required');
+    }
+    return true;
+  }),
   body('password').notEmpty().withMessage('Password required'),
 ];
 

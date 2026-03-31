@@ -44,6 +44,12 @@ Whether you are a student sharing an innovation idea, an HOD approving a circula
 - Top trending topics, leaderboard, and audit logs
 - Export data as JSON for reporting (Director/Admin only)
 
+### 🧭 Role-Specific Dashboard Environments
+- Dedicated dashboard experiences for **Director**, **Security Officer**, **Dean of Academics**, and **Dean of Student Welfare**
+- Director can preview and supervise all authority dashboards from a dashboard switcher
+- Security view is focused on security updates and emergency actions
+- Student dashboard flow remains unchanged
+
 ### 🔒 Role-Based Access Control
 
 | Role | Access Level |
@@ -76,6 +82,7 @@ Whether you are a student sharing an innovation idea, an HOD approving a circula
 
 ### 🔐 Secure Authentication
 - Google OAuth login with RGUKT domain validation
+- Login supports **College ID or Email** (useful for higher authorities without ID-based login)
 - JWT + Refresh Token rotation
 - MFA (TOTP via Google Authenticator) for HOD, Dean, Director roles
 - Forgot password flow with secure crypto token
