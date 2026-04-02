@@ -27,7 +27,7 @@ const UserSchema = new mongoose.Schema({
         // Allow all 4 RGUKT campus domains + base domain
         return /^[a-z0-9._%+-]+@rgukt([a-z]{2,5})?\.ac\.in$/i.test(v);
       },
-      message: props => `Only college email accounts (@rguktrkv.ac.in, @rguktrong.ac.in, @rguktskl.ac.in, @rguktnuz.ac.in) are allowed!`
+      message: props => `Only college email accounts (@rguktrkv.ac.in, @rguktong.ac.in, @rguktskl.ac.in, @rguktnuz.ac.in) are allowed!`
     }
   },
   password: {

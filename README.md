@@ -94,7 +94,7 @@ Whether you are a student sharing an innovation idea, an HOD approving a circula
 | Campus | Email Domain |
 |---|---|
 | RK Valley | `@rguktrkv.ac.in` |
-| Ongole | `@rguktrong.ac.in` |
+| Ongole | `@rguktong.ac.in` |
 | Srikakulam | `@rguktskl.ac.in` |
 | Nuzvid | `@rguktnuz.ac.in` |
 

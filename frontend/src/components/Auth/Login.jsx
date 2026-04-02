@@ -37,7 +37,7 @@ export default function Login() {
   const BRANCHES = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'MME', 'CHEM', 'PUC'];
   const ROLES = ['STUDENT', 'FACULTY', 'HOD', 'DSW', 'DEAN', 'DIRECTOR', 'SECURITY', 'ADMIN'];
 
-  const STUDENT_DOMAINS = ['@rguktrkv.ac.in', '@rguktrong.ac.in', '@rguktskl.ac.in', '@rguktnuz.ac.in'];
+  const STUDENT_DOMAINS = ['@rguktrkv.ac.in', '@rguktong.ac.in', '@rguktskl.ac.in', '@rguktnuz.ac.in'];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -68,7 +68,7 @@ export default function Login() {
         if (form.role === 'STUDENT') {
           const validDomain = STUDENT_DOMAINS.some(d => form.email.endsWith(d));
           if (!validDomain) {
-            toast.error('Students must use their college email (e.g. r220379@rguktrkv.ac.in, @rguktrong.ac.in, @rguktskl.ac.in, @rguktnuz.ac.in)');
+            toast.error('Students must use their college email (e.g. r220379@rguktrkv.ac.in, @rguktong.ac.in, @rguktskl.ac.in, @rguktnuz.ac.in)');
             setLoading(false);
             return;
           }
@@ -279,7 +279,7 @@ export default function Login() {
                       />
                       {form.role === 'STUDENT' && (
                         <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginLeft: '0.5rem' }}>
-                          Use your college email: @rguktrkv.ac.in / @rguktrong.ac.in / @rguktskl.ac.in / @rguktnuz.ac.in
+                          Use your college email: @rguktrkv.ac.in / @rguktong.ac.in / @rguktskl.ac.in / @rguktnuz.ac.in
                         </p>
                       )}
                     </div>
