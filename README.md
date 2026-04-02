@@ -156,10 +156,10 @@ npm install
 ### 4. Run the App
 ```bash
 # Backend — port 5000
-npm run dev
+npm --prefix . run dev
 
 # Frontend — port 3000
-cd frontend && npm start
+npm --prefix frontend start
 ```
 
 Open [http://localhost:3000](http://localhost:3000) and sign in with your RGUKT college email.
