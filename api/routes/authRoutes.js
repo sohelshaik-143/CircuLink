@@ -28,12 +28,12 @@ const registerValidator = [
     .custom((value, { req }) => {
       const role = String(req.body.role || '').toUpperCase();
       if (role === 'STUDENT' && !String(value || '').trim()) {
-        throw new Error('College ID is required for students');
+        throw new Error('Student ID is required for students');
       }
       return true;
     })
     .bail()
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .toUpperCase(),
   body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
@@ -41,10 +41,12 @@ const registerValidator = [
   body('name').notEmpty().trim().withMessage('Name is required'),
   body('role').isIn(['STUDENT', 'FACULTY', 'HOD', 'DSW', 'DEAN', 'DIRECTOR', 'SECURITY', 'ADMIN'])
     .withMessage('Invalid role'),
-  body('campus').isIn(['RK Valley', 'Nuzvid', 'Basar', 'Srikakulam', 'ongole'])
+  body('campus').isIn(['RK Valley', 'Nuzvid', 'Basar', 'Srikakulam', 'Ongole'])
     .withMessage('Invalid campus'),
-  body('branch').optional().isIn(['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'CHEM', 'MMT'])
+  body('branch').optional({ checkFalsy: true }).isIn(['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'CHEM', 'MMT', 'MME', 'GENERAL', 'PUC'])
     .withMessage('Invalid branch'),
+  body('year').optional({ checkFalsy: true }).isIn(['PUC-1', 'PUC-2', 'E1', 'E2', 'E3', 'E4'])
+    .withMessage('Invalid year'),
 ];
 
 const loginValidator = [

@@ -16,8 +16,12 @@ const fs = require('fs');
 // Multer Config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = 'uploads/circulars';
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const dir = process.env.VERCEL ? '/tmp' : 'uploads/circulars';
+    try {
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    } catch (err) {
+      console.warn('Warning: Could not create circulars upload directory:', err.message);
+    }
     cb(null, dir);
   },
   filename: (req, file, cb) => {
@@ -184,9 +188,9 @@ router.post('/', protect, upload.array('attachments', 5), [
 
     const circular = await Circular.create({
       title, content, category, priority: priority || 'MEDIUM',
-      targetBranches: targetBranches || ['ALL'],
-      targetCampuses: targetCampuses || ['ALL'],
-      targetYears: targetYears || ['ALL'],
+      targetBranches: branches || ['ALL'],
+      targetCampuses: campuses || ['ALL'],
+      targetYears: years || ['ALL'],
       author: req.user._id, authorRole: role,
       approvalChain, status: initialStatus,
       expiryDate: expiryDate || null,

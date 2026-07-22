@@ -9,6 +9,9 @@ const STUDENT_ALLOWED_DOMAINS = [
   '@rguktong.ac.in',
   '@rguktskl.ac.in',
   '@rguktnuz.ac.in',
+  '@rguktbasar.ac.in',
+  '@rguktb.ac.in',
+  '@rgukt.ac.in',
 ];
 
 // @route   POST /api/auth/register
@@ -16,21 +19,17 @@ exports.register = async (req, res) => {
   try {
     const { collegeId, email, password, name, role, branch, campus, year, section } = req.body;
     const normalizedEmail = String(email || '').toLowerCase().trim();
-    let normalizedCollegeId = String(collegeId || '').trim().toUpperCase();
+    let rawCollegeId = String(collegeId || '').trim().toUpperCase();
 
-    // For authorities, allow empty collegeId and derive a valid identifier from email.
-    if (role !== 'STUDENT' && !normalizedCollegeId) {
-      const emailPrefix = normalizedEmail.split('@')[0] || 'AUTHUSER';
-      normalizedCollegeId = emailPrefix.replace(/[^a-z0-9_]/gi, '').toUpperCase().slice(0, 20);
-      if (!normalizedCollegeId || normalizedCollegeId.length < 2) {
-        normalizedCollegeId = `AU${Date.now().toString().slice(-6)}`;
-      }
-    }
+    const cleanYear = (year && String(year).trim()) ? String(year).trim() : undefined;
+    const cleanBranch = (branch && String(branch).trim()) ? String(branch).trim() : undefined;
+    const cleanSection = (section && String(section).trim()) ? String(section).trim() : undefined;
+    const cleanCollegeId = role === 'STUDENT' ? (rawCollegeId || undefined) : (rawCollegeId || undefined);
 
-    // Students must use their college email only
+    // Students must use their college email and provide Student ID
     if (role === 'STUDENT') {
-      if (!normalizedCollegeId) {
-        return res.status(400).json({ success: false, message: 'College ID is required for student registration.' });
+      if (!cleanCollegeId) {
+        return res.status(400).json({ success: false, message: 'Student ID (College ID) is required for student registration.' });
       }
 
       const isValidDomain = STUDENT_ALLOWED_DOMAINS.some(domain => normalizedEmail.endsWith(domain));
@@ -42,17 +41,30 @@ exports.register = async (req, res) => {
       }
     }
 
-    const existingUser = await User.findOne({ $or: [{ email: normalizedEmail }, { collegeId: normalizedCollegeId }] });
+    const queryOr = [{ email: normalizedEmail }];
+    if (cleanCollegeId) queryOr.push({ collegeId: cleanCollegeId });
+
+    const existingUser = await User.findOne({ $or: queryOr });
     if (existingUser) {
-      return res.status(400).json({ success: false, message: 'User with this ID or email already exists.' });
+      return res.status(400).json({ success: false, message: 'User with this email or Student ID already exists.' });
     }
 
-    const user = await User.create({ collegeId: normalizedCollegeId, email: normalizedEmail, password, name, role, branch, campus, year, section });
+    const user = await User.create({
+      collegeId: cleanCollegeId,
+      email: normalizedEmail,
+      password,
+      name,
+      role,
+      branch: cleanBranch,
+      campus,
+      year: cleanYear,
+      section: cleanSection,
+    });
 
     await AuditLog.create({
       user: user._id, action: 'REGISTER',
       resourceType: 'User', resourceId: user._id,
-      details: { role, campus, branch },
+      details: { role, campus, branch: cleanBranch },
       ipAddress: req.ip,
     });
 
@@ -115,8 +127,11 @@ exports.googleLogin = async (req, res) => {
       'rguktong.ac.in': 'Ongole',
       'rguktskl.ac.in': 'Srikakulam',
       'rguktnuz.ac.in': 'Nuzvid',
+      'rguktbasar.ac.in': 'Basar',
+      'rguktb.ac.in': 'Basar',
+      'rgukt.ac.in': 'RK Valley',
     };
-    const emailDomain = email.split('@')[1];
+    const emailDomain = String(email.split('@')[1] || '').toLowerCase().trim();
     const campus = campusMap[emailDomain] || 'RK Valley';
 
     let user = await User.findOne({ $or: [{ googleId }, { email }] });
@@ -162,7 +177,7 @@ exports.googleLogin = async (req, res) => {
     });
   } catch (err) {
     console.error('Google Auth Error:', err);
-    res.status(400).json({ success: false, message: 'Google authentication failed.' });
+    res.status(400).json({ success: false, message: `Google authentication failed: ${err.message}` });
   }
 };
 

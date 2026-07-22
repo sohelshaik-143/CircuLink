@@ -6,9 +6,17 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure upload dir exists
-const uploadDir = path.join(__dirname, '../../uploads/messages');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+const uploadDir = process.env.VERCEL 
+  ? '/tmp' 
+  : path.join(__dirname, '../../uploads/messages');
+
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (err) {
+  console.warn('Warning: Could not create messages upload directory:', err.message);
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),

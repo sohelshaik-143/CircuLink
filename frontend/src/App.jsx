@@ -63,9 +63,10 @@ function ProtectedRoute({ children, roles }) {
 // App layout with navbar
 function AppLayout({ children }) {
   const { user } = useAuth();
-  const needsProfileSetup = user &&
-    ['STUDENT', 'FACULTY'].includes(user.role) &&
-    (!user.branch || !user.year);
+  const needsProfileSetup = user && (
+    user.role === 'STUDENT' ? (!user.branch || !user.year) :
+    user.role === 'FACULTY' ? (!user.branch) : false
+  );
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--slate-50)' }}>

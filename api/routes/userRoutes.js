@@ -124,8 +124,8 @@ router.put('/profile', protect, upload.single('profilePicture'), async (req, res
     if (phone)    user.phone = phone;
     if (language) user.language = language;
     if (theme)    user.theme = theme;
-    if (branch)   user.branch = branch;
-    if (year)     user.year = year;
+    if (branch !== undefined) user.branch = (branch && String(branch).trim()) ? branch : undefined;
+    if (year !== undefined)   user.year = (year && String(year).trim()) ? year : undefined;
     if (campus)   user.campus = campus;
     if (subscribedBranches) user.subscribedBranches = JSON.parse(subscribedBranches);
     if (subscribedTopics)   user.subscribedTopics = JSON.parse(subscribedTopics);

@@ -205,7 +205,7 @@ export default function Navbar() {
             <button onClick={() => { setShowProfile(s => !s); setShowNotifs(false); }} style={S.profileBtn}>
               <div style={S.avatarWrap}>
                 {user?.profilePicture
-                  ? <img src={`http://localhost:5000${user.profilePicture}`} alt="" style={S.avatarImg} />
+                  ? <img src={user.profilePicture.startsWith('http') ? user.profilePicture : `${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '')}${user.profilePicture}`} alt="" style={S.avatarImg} />
                   : <div style={{ ...S.avatar, background: ROLE_COLORS[user?.role] }}>{user?.name?.[0]?.toUpperCase()}</div>}
                 <span style={S.onlineDot} title="Online" />
               </div>
@@ -221,11 +221,11 @@ export default function Navbar() {
                   <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--glass-border)' }}>
                     <div style={S.avatarWrap}>
                       {user?.profilePicture
-                        ? <img src={`http://localhost:5000${user.profilePicture}`} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
+                        ? <img src={user.profilePicture.startsWith('http') ? user.profilePicture : `${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '')}${user.profilePicture}`} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
                         : <div style={{ ...S.avatar, background: ROLE_COLORS[user?.role], width: 40, height: 40 }}>{user?.name?.[0]?.toUpperCase()}</div>}
                     </div>
                     <p style={{ fontWeight: 800, margin: '0.5rem 0 0', fontSize: '1rem' }}>{user?.name}</p>
-                    <p style={{ color: 'var(--slate-500)', fontSize: '0.8rem', margin: '0.2rem 0 0' }}>{user?.collegeId}</p>
+                    <p style={{ color: 'var(--slate-500)', fontSize: '0.8rem', margin: '0.2rem 0 0' }}>{user?.collegeId || user?.email}</p>
                     <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
                       <span style={S.pointsBadge}>⭐ {user?.points || 0}</span>
                       <span style={S.levelBadge}>{user?.level || 'Beginner'}</span>

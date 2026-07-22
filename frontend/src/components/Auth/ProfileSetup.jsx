@@ -17,17 +17,19 @@ export default function ProfileSetup() {
     });
     const [loading, setLoading] = useState(false);
 
+    const isStudent = user?.role === 'STUDENT';
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!form.branch || !form.year) {
-            toast.error('Please select your branch and year');
+        if (!form.branch || (isStudent && !form.year)) {
+            toast.error(isStudent ? 'Please select your branch and year' : 'Please select your branch');
             return;
         }
         setLoading(true);
         try {
             const formData = new FormData();
             formData.append('branch', form.branch);
-            formData.append('year', form.year);
+            if (form.year) formData.append('year', form.year);
             if (form.section) formData.append('section', form.section);
 
             const { data } = await usersAPI.updateProfile(formData);
@@ -63,10 +65,12 @@ export default function ProfileSetup() {
                         <span style={S.infoLabel}>Name</span>
                         <span style={S.infoValue}>{user.name}</span>
                     </div>
-                    <div style={S.infoRow}>
-                        <span style={S.infoLabel}>College ID</span>
-                        <span style={S.infoValue}>{user.collegeId}</span>
-                    </div>
+                    {user.collegeId && (
+                        <div style={S.infoRow}>
+                            <span style={S.infoLabel}>Student ID</span>
+                            <span style={S.infoValue}>{user.collegeId}</span>
+                        </div>
+                    )}
                     <div style={S.infoRow}>
                         <span style={S.infoLabel}>Campus</span>
                         <span style={S.infoValue}>{user.campus}</span>
@@ -77,7 +81,7 @@ export default function ProfileSetup() {
                     </div>
                 </div>
 
-                <p style={S.note}>Name, ID, and campus are auto-detected from your college credentials and cannot be changed.</p>
+                <p style={S.note}>Name, role, and campus are auto-detected from your college credentials and cannot be changed.</p>
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} style={S.form}>
@@ -95,18 +99,20 @@ export default function ProfileSetup() {
                     </div>
 
                     <div style={{ display: 'flex', gap: '1rem' }}>
-                        <div style={{ ...S.field, flex: 1 }}>
-                            <label style={S.label}>Year *</label>
-                            <select
-                                value={form.year}
-                                onChange={e => setForm({ ...form, year: e.target.value })}
-                                style={S.select}
-                                required
-                            >
-                                <option value="">Select year</option>
-                                {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                            </select>
-                        </div>
+                        {isStudent && (
+                            <div style={{ ...S.field, flex: 1 }}>
+                                <label style={S.label}>Year *</label>
+                                <select
+                                    value={form.year}
+                                    onChange={e => setForm({ ...form, year: e.target.value })}
+                                    style={S.select}
+                                    required
+                                >
+                                    <option value="">Select year</option>
+                                    {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                                </select>
+                            </div>
+                        )}
                         <div style={{ ...S.field, flex: 1 }}>
                             <label style={S.label}>Section</label>
                             <select

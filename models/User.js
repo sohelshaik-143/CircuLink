@@ -4,16 +4,17 @@ const bcrypt = require('bcryptjs');
 const UserSchema = new mongoose.Schema({
   collegeId: {
     type: String,
-    required: true,
+    required: function () { return this.role === 'STUDENT'; },
     unique: true,
+    sparse: true,
     trim: true,
     uppercase: true,
     validate: {
       validator: function (v) {
-        // Allows formats like r220379, F001CSE, hod_cse, etc.
+        if (!v && this.role !== 'STUDENT') return true;
         return /^[a-z0-9_]{2,20}$/i.test(v);
       },
-      message: props => `${props.value} is not a valid College ID!`
+      message: props => `${props.value} is not a valid Student ID!`
     }
   },
   email: {
@@ -24,10 +25,15 @@ const UserSchema = new mongoose.Schema({
     trim: true,
     validate: {
       validator: function (v) {
-        // Allow all 4 RGUKT campus domains + base domain
-        return /^[a-z0-9._%+-]+@rgukt([a-z]{2,5})?\.ac\.in$/i.test(v);
+        // Enforce college domains only for students
+        const isStudent = this && this.role === 'STUDENT';
+        if (isStudent) {
+          return /^[a-z0-9._%+-]+@rgukt([a-z]{2,5})?\.ac\.in$/i.test(v);
+        }
+        // Allow any standard email for other roles (faculty, dean, director, etc.)
+        return /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(v);
       },
-      message: props => `Only college email accounts (@rguktrkv.ac.in, @rguktong.ac.in, @rguktskl.ac.in, @rguktnuz.ac.in) are allowed!`
+      message: props => `Students must use their college email accounts (@rguktrkv.ac.in, @rguktong.ac.in, @rguktskl.ac.in, @rguktnuz.ac.in).`
     }
   },
   password: {
@@ -44,7 +50,7 @@ const UserSchema = new mongoose.Schema({
   },
   branch: {
     type: String,
-    enum: ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'CHEM', 'MMT', 'GENERAL'],
+    enum: ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'CHEM', 'MMT', 'MME', 'GENERAL', 'PUC'],
     required: function () {
       return ['STUDENT', 'FACULTY', 'HOD'].includes(this.role);
     },
@@ -103,10 +109,31 @@ const UserSchema = new mongoose.Schema({
   communityJoinedAt: { type: Date },
 }, { timestamps: true });
 
+// Sanitize empty strings & optional fields before validation
+UserSchema.pre('validate', function (next) {
+  if (this.year === '' || this.year === null) {
+    this.year = undefined;
+  }
+  if (this.branch === '' || this.branch === null) {
+    this.branch = undefined;
+  }
+  if (this.section === '' || this.section === null) {
+    this.section = undefined;
+  }
+  if (this.collegeId === '' || this.collegeId === null) {
+    this.collegeId = undefined;
+  }
+  if (this.role !== 'STUDENT') {
+    if (!this.year) this.year = undefined;
+    if (!this.collegeId) this.collegeId = undefined;
+  }
+  next();
+});
+
 // Hash password and auto-detect campus
 UserSchema.pre('save', async function (next) {
   // Auto-detect campus from ID prefix IF not manually set and ID is new/changed
-  if (this.isModified('collegeId') && !this.isModified('campus')) {
+  if (this.collegeId && this.isModified('collegeId') && !this.isModified('campus')) {
     const prefix = this.collegeId.charAt(0).toLowerCase();
     const campusMap = {
       'r': 'RK Valley',

@@ -32,7 +32,7 @@ export default function StudentDashboard() {
       setCirculars(c.data.circulars || []);
       setOverview(a.data.overview || {});
       setCommunityCount(comm.data.total || 0);
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch(() => { }).finally(() => setLoading(false));
   }, [user]);
 
   if (loading) return (

@@ -26,6 +26,7 @@ const messageRoutes = require('./api/routes/messageRoutes');
 // ─── App Setup ───────────────────────────────────────────────────────────────
 connectDB();
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 // ─── Socket.IO ───────────────────────────────────────────────────────────────

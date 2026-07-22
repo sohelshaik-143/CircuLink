@@ -34,7 +34,7 @@ export default function Login() {
   const [resetPassword, setResetPassword] = useState('');
   const [forgotStep, setForgotStep] = useState('email'); // 'email' | 'reset' | 'done'
 
-  const BRANCHES = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'MME', 'CHEM', 'PUC'];
+  const BRANCHES = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'CHEM', 'MMT', 'MME', 'GENERAL', 'PUC'];
   const ROLES = ['STUDENT', 'FACULTY', 'HOD', 'DSW', 'DEAN', 'DIRECTOR', 'SECURITY', 'ADMIN'];
 
   const STUDENT_DOMAINS = ['@rguktrkv.ac.in', '@rguktong.ac.in', '@rguktskl.ac.in', '@rguktnuz.ac.in'];
@@ -73,7 +73,12 @@ export default function Login() {
             return;
           }
         }
-        await register(form);
+        const payload = { ...form };
+        if (form.role !== 'STUDENT') {
+          delete payload.year;
+          if (!payload.collegeId) delete payload.collegeId;
+        }
+        await register(payload);
         navigate('/dashboard');
       }
     } catch (err) {
@@ -332,29 +337,31 @@ export default function Login() {
                     )}
                   </div>
                 ) : (
-                  <div style={styles.field}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <label style={styles.label}>{form.role === 'STUDENT' ? 'College ID' : 'College ID (Optional)'}</label>
-                      {detectedCampus && (
-                        <motion.span
-                          initial={{ opacity: 0, x: 10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          style={{ ...styles.campusNode, color: detectedCampus.color }}
-                        >
-                          {detectedCampus.icon} {detectedCampus.name} Detected
-                        </motion.span>
-                      )}
+                  form.role === 'STUDENT' ? (
+                    <div style={styles.field}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <label style={styles.label}>Student ID (College ID)</label>
+                        {detectedCampus && (
+                          <motion.span
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            style={{ ...styles.campusNode, color: detectedCampus.color }}
+                          >
+                            {detectedCampus.icon} {detectedCampus.name} Detected
+                          </motion.span>
+                        )}
+                      </div>
+                      <input
+                        name="collegeId"
+                        value={form.collegeId}
+                        onChange={handleChange}
+                        placeholder="e.g. R220379"
+                        required
+                        style={styles.input}
+                        className="glass"
+                      />
                     </div>
-                    <input
-                      name="collegeId"
-                      value={form.collegeId}
-                      onChange={handleChange}
-                      placeholder={form.role === 'STUDENT' ? 'e.g. R220379' : 'Optional for higher authorities'}
-                      required={form.role === 'STUDENT'}
-                      style={styles.input}
-                      className="glass"
-                    />
-                  </div>
+                  ) : null
                 )}
 
                 <div style={styles.field}>
@@ -395,7 +402,7 @@ export default function Login() {
                           <label style={styles.label}>Year</label>
                           <select name="year" value={form.year} onChange={handleChange} style={styles.input} className="glass">
                             <option value="" style={{ color: '#0f172a' }}>Select</option>
-                            {['PUC1', 'PUC2', 'E1', 'E2', 'E3', 'E4'].map(y => <option key={y} value={y} style={{ color: '#0f172a' }}>{y}</option>)}
+                            {['PUC-1', 'PUC-2', 'E1', 'E2', 'E3', 'E4'].map(y => <option key={y} value={y} style={{ color: '#0f172a' }}>{y}</option>)}
                           </select>
                         </div>
                         <div style={{ ...styles.field, flex: 1 }}>
