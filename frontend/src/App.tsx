@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link, useSearchParams } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
@@ -65,7 +66,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const needsProfileSetup = user && (
     user.role === 'STUDENT' ? (!user.branch || !user.year) :
-    user.role === 'FACULTY' ? (!user.branch) : false
+      user.role === 'FACULTY' ? (!user.branch) : false
   );
 
   return (
