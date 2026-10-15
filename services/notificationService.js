@@ -1,8 +1,7 @@
 // services/notificationService.js
-// Centralized notification + socket emit service
+// Centralized notification + socket emit service powered by MySQL 8
 
-const { Notification } = require('../models/Other');
-const User = require('../models/User');
+const pool = require('../config/mysql');
 
 class NotificationService {
   constructor(io) {
@@ -11,34 +10,52 @@ class NotificationService {
 
   // Send to a single user
   async sendToUser(recipientId, notification) {
-    const notif = await Notification.create({ recipient: recipientId, ...notification });
-    this.io?.to(`user:${recipientId}`).emit('notification', notif);
-    return notif;
+    const { sender, type, title, message, link, priority = 'MEDIUM', isEmergency = false, relatedCircular, relatedPost } = notification;
+
+    const [res] = await pool.query(`
+      INSERT INTO notifications (recipient_id, sender_id, type, title, message, link, priority, is_emergency, related_circular_id, related_post_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      recipientId,
+      sender || null,
+      type || 'SYSTEM',
+      title,
+      message,
+      link || null,
+      priority,
+      isEmergency,
+      relatedCircular || null,
+      relatedPost || null,
+    ]);
+
+    const notifObj = {
+      _id: res.insertId,
+      id: res.insertId,
+      recipient: recipientId,
+      ...notification,
+      isRead: false,
+      createdAt: new Date(),
+    };
+
+    this.io?.to(`user:${recipientId}`).emit('notification', notifObj);
+    return notifObj;
   }
 
   // Send to multiple users
   async sendToMany(recipientIds, notification) {
     if (!recipientIds.length) return;
-    const docs = recipientIds.map(id => ({ recipient: id, ...notification }));
-
-    // Batch in chunks of 500
-    for (let i = 0; i < docs.length; i += 500) {
-      await Notification.insertMany(docs.slice(i, i + 500));
+    for (const id of recipientIds) {
+      await this.sendToUser(id, notification);
     }
-
-    // Emit to each socket
-    recipientIds.forEach(id => {
-      this.io?.to(`user:${id}`).emit('notification', { ...notification });
-    });
   }
 
-  // Broadcast emergency to ALL users
+  // Broadcast emergency to ALL active users
   async broadcastEmergency(sender, data) {
-    const allUsers = await User.find({ isActive: true }).select('_id').lean();
-    const ids = allUsers.map(u => u._id);
+    const [users] = await pool.query('SELECT id FROM users WHERE is_active = TRUE');
+    const ids = users.map(u => u.id);
 
     await this.sendToMany(ids, {
-      sender: sender._id,
+      sender: sender._id || sender.id,
       type: 'EMERGENCY',
       title: `🚨 EMERGENCY: ${data.title}`,
       message: data.content,
@@ -47,7 +64,6 @@ class NotificationService {
       relatedCircular: data.circularId,
     });
 
-    // Socket room broadcast
     this.io?.emit('emergency', {
       title: data.title,
       content: data.content,
@@ -58,13 +74,13 @@ class NotificationService {
 
   // Notify approvers when circular needs review
   async notifyApprovers(role, circularId, circularTitle, senderUser) {
-    const approvers = await User.find({ role, isActive: true }).select('_id').lean();
+    const [approvers] = await pool.query('SELECT id FROM users WHERE role = ? AND is_active = TRUE', [role]);
     if (!approvers.length) return;
 
     await this.sendToMany(
-      approvers.map(u => u._id),
+      approvers.map(u => u.id),
       {
-        sender: senderUser._id,
+        sender: senderUser._id || senderUser.id,
         type: 'APPROVAL_REQUIRED',
         title: '📋 Circular Awaiting Your Approval',
         message: `"${circularTitle}" needs your review as ${role}.`,
@@ -76,12 +92,12 @@ class NotificationService {
 
   // Notify followers about new post
   async notifyFollowers(author, postId, postTitle) {
-    const authorDoc = await User.findById(author._id).populate('followers', '_id').lean();
-    if (!authorDoc?.followers?.length) return;
+    const [followers] = await pool.query('SELECT follower_id FROM user_followers WHERE following_id = ?', [author._id || author.id]);
+    if (!followers.length) return;
 
-    const followerIds = authorDoc.followers.map(f => f._id);
+    const followerIds = followers.map(f => f.follower_id);
     await this.sendToMany(followerIds.slice(0, 100), {
-      sender: author._id,
+      sender: author._id || author.id,
       type: 'NEW_POST',
       title: `New post by ${author.name}`,
       message: `"${postTitle}"`,
@@ -92,7 +108,7 @@ class NotificationService {
 
   // Award badge notification
   async awardBadge(userId, badgeName) {
-    await User.findByIdAndUpdate(userId, { $addToSet: { badges: badgeName } });
+    await pool.query('INSERT IGNORE INTO user_badges (user_id, badge_name) VALUES (?, ?)', [userId, badgeName]);
     await this.sendToUser(userId, {
       type: 'BADGE_EARNED',
       title: `🏅 New Badge: ${badgeName}!`,

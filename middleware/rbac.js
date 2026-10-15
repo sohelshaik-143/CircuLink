@@ -53,7 +53,8 @@ exports.ownerOrAdmin = (getOwnerId) => {
       const ownerId = await getOwnerId(req);
       if (!ownerId) return res.status(404).json({ success: false, message: 'Resource not found.' });
 
-      const isOwner = ownerId.toString() === req.user._id.toString();
+      const userKey = (req.user._id || req.user.id || '').toString();
+      const isOwner = ownerId.toString() === userKey;
       const isAdmin = req.user.role === 'ADMIN';
       const isHigher = ['DEAN', 'DIRECTOR'].includes(req.user.role);
 

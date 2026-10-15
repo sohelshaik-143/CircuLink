@@ -1,44 +1,42 @@
 {
-  "name": "rgukt-frontend",
-  "version": "1.0.0",
+  "name": "circulink-frontend",
+  "version": "2.0.0",
   "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
   "dependencies": {
     "@react-oauth/google": "^0.13.4",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "axios": "^1.4.0",
-    "chart.js": "^4.3.0",
+    "@stomp/stompjs": "^7.0.0",
+    "@tanstack/react-query": "^5.28.9",
+    "axios": "^1.6.8",
+    "chart.js": "^4.4.2",
     "crypto-js": "^4.2.0",
     "date-fns": "^2.30.0",
-    "framer-motion": "^12.35.0",
-    "lucide-react": "^1.11.0",
+    "framer-motion": "^11.0.24",
+    "lucide-react": "^0.363.0",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.1",
-    "react-icons": "^4.10.1",
-    "react-router-dom": "^6.14.2",
-    "react-scripts": "5.0.1",
-    "recharts": "^3.8.1",
-    "socket.io-client": "^4.7.1"
+    "react-icons": "^5.0.1",
+    "react-router-dom": "^6.22.3",
+    "recharts": "^2.12.3",
+    "sockjs-client": "^1.6.1",
+    "socket.io-client": "^4.7.5",
+    "zustand": "^4.5.2"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "proxy": "http://localhost:5000",
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
+    "@types/node": "^20.11.30",
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "@types/sockjs-client": "^1.5.4",
+    "@vitejs/plugin-react": "^4.2.1",
+    "typescript": "^5.2.2",
+    "vite": "^5.1.6"
   }
 }

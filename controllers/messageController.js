@@ -1,69 +1,46 @@
-const { Message } = require('../models/Other');
-const User = require('../models/User');
+const MySQLService = require('../services/mysqlService');
 const path = require('path');
 
-// GET /api/messages/:userId — conversation between current user and :userId
+// GET /api/messages/:userId
 exports.getConversation = async (req, res) => {
   try {
-    const me = req.user._id;
+    const me = req.user._id || req.user.id;
     const other = req.params.userId;
-
-    const messages = await Message.find({
-      $or: [
-        { sender: me, receiver: other },
-        { sender: other, receiver: me },
-      ],
-    }).sort({ createdAt: 1 });
-
-    // Mark received messages as read
-    await Message.updateMany(
-      { sender: other, receiver: me, isRead: false },
-      { isRead: true, readAt: new Date() }
-    );
-
+    const messages = await MySQLService.getConversation(me, other);
     res.json({ success: true, messages });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// POST /api/messages/:userId — send encrypted message (text or file)
+// POST /api/messages/:userId
 exports.sendMessage = async (req, res) => {
   try {
-    const me = req.user._id;
+    const me = req.user._id || req.user.id;
     const other = req.params.userId;
 
-    // Only community members can message
-    const [senderUser, receiverUser] = await Promise.all([
-      User.findById(me),
-      User.findById(other),
-    ]);
-    if (!senderUser?.joinedCommunity || !receiverUser?.joinedCommunity) {
-      return res.status(403).json({ success: false, message: 'Both users must be community members to message.' });
-    }
-
-    const msgData = { sender: me, receiver: other };
+    let fileUrl = null;
+    let fileName = null;
+    let fileType = null;
+    let content = req.body.content || '';
 
     if (req.file) {
       const ext = path.extname(req.file.originalname).toLowerCase();
       const imageExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-      msgData.fileUrl = `/uploads/messages/${req.file.filename}`;
-      msgData.fileType = imageExts.includes(ext) ? 'image' : 'file';
-      msgData.fileName = req.file.originalname;
-    } else {
-      if (!req.body.content) {
-        return res.status(400).json({ success: false, message: 'Message content or file required.' });
-      }
-      msgData.content = req.body.content; // already AES-encrypted by client
+      fileUrl = `/uploads/messages/${req.file.filename}`;
+      fileType = imageExts.includes(ext) ? 'image' : 'file';
+      fileName = req.file.originalname;
+    } else if (!content) {
+      return res.status(400).json({ success: false, message: 'Message content or file required.' });
     }
 
-    const message = await Message.create(msgData);
+    const message = await MySQLService.sendMessage(me, other, content, fileUrl, fileName, fileType);
 
-    // Real-time delivery via Socket.IO
+    // Socket.IO real-time emission
     const io = req.app.get('io');
     if (io) {
       io.to(`user:${other}`).emit('new_message', {
-        message: { ...message.toObject(), senderName: senderUser.name },
+        message: { ...message, senderName: req.user.name },
       });
     }
 
@@ -73,13 +50,10 @@ exports.sendMessage = async (req, res) => {
   }
 };
 
-// GET /api/messages/unread — count of unread messages per sender
+// GET /api/messages/unread
 exports.getUnreadCounts = async (req, res) => {
   try {
-    const counts = await Message.aggregate([
-      { $match: { receiver: req.user._id, isRead: false } },
-      { $group: { _id: '$sender', count: { $sum: 1 } } },
-    ]);
+    const counts = await MySQLService.getUnreadMessageCounts(req.user._id || req.user.id);
     res.json({ success: true, counts });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -89,10 +63,7 @@ exports.getUnreadCounts = async (req, res) => {
 // POST /api/users/community/join
 exports.joinCommunity = async (req, res) => {
   try {
-    await User.findByIdAndUpdate(req.user._id, {
-      joinedCommunity: true,
-      communityJoinedAt: new Date(),
-    });
+    await MySQLService.updateUser(req.user._id || req.user.id, { joinedCommunity: true });
     res.json({ success: true, message: 'You have joined the community!' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -102,7 +73,7 @@ exports.joinCommunity = async (req, res) => {
 // POST /api/users/community/leave
 exports.leaveCommunity = async (req, res) => {
   try {
-    await User.findByIdAndUpdate(req.user._id, { joinedCommunity: false });
+    await MySQLService.updateUser(req.user._id || req.user.id, { joinedCommunity: false });
     res.json({ success: true, message: 'You have left the community.' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

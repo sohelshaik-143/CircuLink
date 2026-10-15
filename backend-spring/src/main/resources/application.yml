@@ -1,0 +1,49 @@
+server:
+  port: 5000
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: circulink-backend
+  datasource:
+    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/circulink?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:circulink_rgukt_secure_jwt_secret_key_2026_super_production_standard_at_least_256_bits}
+    expiration-ms: 604800000 # 7 days (7 * 24 * 60 * 60 * 1000)
+    refresh-expiration-ms: 2592000000 # 30 days (30 * 24 * 60 * 60 * 1000)
+  cors:
+    allowed-origins: ${CLIENT_URL:http://localhost:3000,http://localhost:5173,http://localhost:3001}
+  upload:
+    dir: ${UPLOAD_DIR:uploads}
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:254643186728-8ovhfanc5rv71099kh67v3s6iqua32vb.apps.googleusercontent.com}
+
+logging:
+  level:
+    root: INFO
+    com.circulink: DEBUG
+    org.springframework.web: INFO
+    org.springframework.security: INFO

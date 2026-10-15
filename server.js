@@ -1,4 +1,4 @@
-// server.js — Main Express + Socket.IO server (complete version)
+// server.js — Main Express + Socket.IO server (MySQL 8 High-Performance Edition)
 
 require('dotenv').config();
 const express = require('express');
@@ -9,11 +9,9 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
-const mongoose = require('mongoose');
 
-const connectDB = require('./config/db');
-const NotificationService = require('./services/notificationService');
-const GamificationService = require('./services/gamificationService');
+const pool = require('./config/mysql');
+const MySQLService = require('./services/mysqlService');
 
 // ─── Route Imports ───────────────────────────────────────────────────────────
 const authRoutes     = require('./api/routes/authRoutes');
@@ -24,37 +22,34 @@ const { analyticsRouter, notifRouter } = require('./api/routes/analyticsAndNotif
 const messageRoutes = require('./api/routes/messageRoutes');
 
 // ─── App Setup ───────────────────────────────────────────────────────────────
-connectDB();
 const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 // ─── Socket.IO ───────────────────────────────────────────────────────────────
 const io = new Server(server, {
-  cors: { origin: process.env.CLIENT_URL || 'http://localhost:3000', methods: ['GET', 'POST'] },
+  cors: {
+    origin: [process.env.CLIENT_URL || 'http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000'],
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
   pingTimeout: 60000,
 });
 
-// Store io instance globally for use in controllers
+// Store io instance globally
 app.set('io', io);
-const notifService = new NotificationService(io);
-app.set('notifService', notifService);
 
 // Track online users
 const onlineUsers = new Map();
 
 io.on('connection', (socket) => {
-  console.log(`🔌 Client connected: ${socket.id}`);
-
   socket.on('join', (userId) => {
     if (userId) {
       onlineUsers.set(userId.toString(), socket.id);
       socket.join(`user:${userId}`);
-      // Update online status in DB (non-blocking)
-      mongoose.connection.db?.collection('users').updateOne(
-        { _id: new mongoose.Types.ObjectId(userId) },
-        { $set: { isOnline: true, lastSeen: new Date() } }
-      ).catch(() => {});
+      // Update online status in MySQL (non-blocking)
+      pool.query('UPDATE users SET is_online = TRUE, last_seen = NOW() WHERE id = ?', [userId]).catch(() => {});
+      pool.query('INSERT INTO online_users (user_id, session_id, last_heartbeat) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE last_heartbeat = NOW()', [userId, socket.id]).catch(() => {});
     }
   });
 
@@ -74,24 +69,20 @@ io.on('connection', (socket) => {
     for (const [userId, socketId] of onlineUsers.entries()) {
       if (socketId === socket.id) {
         onlineUsers.delete(userId);
-        mongoose.connection.db?.collection('users').updateOne(
-          { _id: new mongoose.Types.ObjectId(userId) },
-          { $set: { isOnline: false, lastSeen: new Date() } }
-        ).catch(() => {});
+        pool.query('UPDATE users SET is_online = FALSE, last_seen = NOW() WHERE id = ?', [userId]).catch(() => {});
+        pool.query('DELETE FROM online_users WHERE user_id = ?', [userId]).catch(() => {});
         break;
       }
     }
-    console.log(`🔌 Client disconnected: ${socket.id}`);
   });
 });
 
-// Export for use in routes
 app.set('onlineUsers', onlineUsers);
 
 // ─── Middleware ──────────────────────────────────────────────────────────────
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({
-  origin: [process.env.CLIENT_URL || 'http://localhost:3000', 'http://localhost:3001'],
+  origin: [process.env.CLIENT_URL || 'http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000'],
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -107,7 +98,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
 // Global rate limiter
 app.use('/api', rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: 1000,
   standardHeaders: true,
   message: { success: false, message: 'Rate limit exceeded. Try again in 15 minutes.' },
 }));
@@ -125,42 +116,39 @@ app.use('/api/messages',      messageRoutes);
 app.get('/api/search', require('./middleware/auth').protect, async (req, res) => {
   try {
     const { q } = req.query;
-    if (!q || q.trim().length < 2) return res.json({ success: true, results: [] });
-    const Post = require('./models/Post');
-    const Circular = require('./models/Circular');
-    const regex = new RegExp(q.trim(), 'i');
-    const [posts, circulars] = await Promise.all([
-      Post.find({ status: 'PUBLISHED', $or: [{ title: regex }, { content: regex }] })
-        .select('title type branch').limit(5).lean(),
-      Circular.find({ status: 'PUBLISHED', $or: [{ title: regex }, { content: regex }] })
-        .select('title category priority').limit(5).lean(),
-    ]);
-    const results = [
-      ...posts.map(p => ({ ...p, _type: 'post' })),
-      ...circulars.map(c => ({ ...c, _type: 'circular' })),
-    ];
+    const results = await MySQLService.search(q);
     res.json({ success: true, results });
-  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // ─── Health & Docs ───────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
-    message: '🚀 RGUKT Platform API is running',
-    timestamp: new Date(),
-    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    onlineUsers: onlineUsers.size,
-    version: '1.0.0',
-  });
+app.get('/api/health', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT 1 as ok');
+    res.json({
+      success: true,
+      message: '🚀 RGUKT CircuLink Platform API is running',
+      timestamp: new Date(),
+      dbStatus: rows.length ? 'connected (MySQL 8)' : 'disconnected',
+      onlineUsers: onlineUsers.size,
+      version: '2.0.0',
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'DB connection error: ' + err.message });
+  }
 });
 
 app.get('/api/docs', (req, res) => {
-  const docs = require('./api/docs/api-documentation.json');
-  res.json(docs);
+  try {
+    const docs = require('./api/docs/api-documentation.json');
+    res.json(docs);
+  } catch (_) {
+    res.json({ success: true, message: 'CircuLink RGUKT Platform API' });
+  }
 });
 
-// Redirect /api to docs
 app.get('/api', (req, res) => res.redirect('/api/docs'));
 
 // ─── Error Handlers ──────────────────────────────────────────────────────────
@@ -170,15 +158,9 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
   console.error(`❌ Error: ${err.message}`);
-  if (err.name === 'CastError') return res.status(400).json({ success: false, message: 'Invalid ID format.' });
-  if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
-    return res.status(400).json({ success: false, message: `${field} already exists.` });
-  }
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Internal Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 });
 
@@ -186,7 +168,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`\n${'─'.repeat(50)}`);
-  console.log(`🎓 RGUKT RK Valley Platform API`);
+  console.log(`🎓 RGUKT RK Valley Platform API (MySQL 8)`);
   console.log(`${'─'.repeat(50)}`);
   console.log(`🚀 Server:    http://localhost:${PORT}`);
   console.log(`📖 API Docs:  http://localhost:${PORT}/api/docs`);
@@ -195,10 +177,9 @@ server.listen(PORT, () => {
   console.log(`${'─'.repeat(50)}\n`);
 });
 
-// Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received. Shutting down...');
-  server.close(() => { mongoose.disconnect(); process.exit(0); });
+  server.close(() => { pool.end(); process.exit(0); });
 });
 
-module.exports = app; // for testing
+module.exports = app;
