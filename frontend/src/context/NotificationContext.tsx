@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { notificationsAPI } from '../api/axios';
 import { useAuth } from './AuthContext';
-import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
+import { io, Socket } from 'socket.io-client';
 import toast from 'react-hot-toast';
 
 interface NotificationItem {
@@ -32,67 +31,59 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
-  const [stompClient, setStompClient] = useState<Client | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [emergencyAlert, setEmergencyAlert] = useState<any>(null);
 
-  // Initialize STOMP WebSocket connection
+  // Initialize Socket.IO connection
   useEffect(() => {
     if (!user) return;
 
     const token = localStorage.getItem('token');
-    const client = new Client({
-      webSocketFactory: () => new SockJS('/ws-circulink'),
-      connectHeaders: {
-        Authorization: `Bearer ${token || ''}`,
-      },
-      debug: () => {},
-      reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
+    const s = io(window.location.origin, {
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
+      auth: { token },
     });
 
-    client.onConnect = () => {
-      // User private notifications
-      client.subscribe('/user/queue/notifications', (message) => {
-        try {
-          const notif = JSON.parse(message.body);
-          setNotifications(prev => [notif, ...prev]);
-          setUnreadCount(prev => prev + 1);
-          toast(notif.title, { icon: '🔔', duration: 4000 });
-        } catch (_) {}
-      });
+    s.on('connect', () => {
+      const uid = user._id || user.id;
+      if (uid) s.emit('join', uid);
+      if (user.branch) s.emit('join_branch', user.branch);
+      if (user.campus) s.emit('join_campus', user.campus);
+    });
 
-      // User private messages
-      client.subscribe('/user/queue/messages', (message) => {
-        try {
-          const msg = JSON.parse(message.body);
-          toast(`💬 New message from ${msg.senderName || 'user'}`, { duration: 4000 });
-        } catch (_) {}
-      });
+    s.on('notification', (notif: any) => {
+      try {
+        setNotifications(prev => [notif, ...prev]);
+        setUnreadCount(prev => prev + 1);
+        toast(notif.title, { icon: '🔔', duration: 4000 });
+      } catch (_) {}
+    });
 
-      // Global Emergency alerts
-      client.subscribe('/topic/emergency', (message) => {
-        try {
-          const alert = JSON.parse(message.body);
-          setEmergencyAlert(alert);
-          toast.error(`🚨 EMERGENCY: ${alert.title}`, { duration: 10000 });
-        } catch (_) {}
-      });
+    s.on('new_message', (payload: any) => {
+      try {
+        const msg = payload.message || payload;
+        toast(`💬 New message from ${msg.senderName || 'user'}`, { duration: 4000 });
+      } catch (_) {}
+    });
 
-      // New published circulars
-      client.subscribe('/topic/new_circular', (message) => {
-        try {
-          const data = JSON.parse(message.body);
-          toast.success(`📋 New Circular: ${data.title}`);
-        } catch (_) {}
-      });
-    };
+    s.on('emergency', (alert: any) => {
+      try {
+        setEmergencyAlert(alert);
+        toast.error(`🚨 EMERGENCY: ${alert.title}`, { duration: 10000 });
+      } catch (_) {}
+    });
 
-    client.activate();
-    setStompClient(client);
+    s.on('new_circular', (circular: any) => {
+      try {
+        toast.success(`📋 New Circular: ${circular.title}`);
+      } catch (_) {}
+    });
+
+    setSocket(s);
 
     return () => {
-      client.deactivate();
+      s.disconnect();
     };
   }, [user]);
 
@@ -130,7 +121,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     <NotificationContext.Provider value={{
       notifications,
       unreadCount,
-      socket: stompClient,
+      socket,
       emergencyAlert,
       markRead,
       markAllRead,

@@ -226,12 +226,22 @@ export default function AnalyticsDashboard() {
               </thead>
               <tbody>
                 {auditLogs.map(log => (
-                  <tr key={log._id} style={S.tr}>
-                    <td style={S.td}><span style={{ fontWeight: 700 }}>{log.user?.name}</span><br /><span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{log.user?.collegeId}</span></td>
+                  <tr key={log._id || log.id} style={S.tr}>
+                    <td style={S.td}>
+                      <span style={{ fontWeight: 700 }}>{log.user?.name || log.userName || 'System User'}</span><br />
+                      <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{log.user?.collegeId || ''}</span>
+                    </td>
                     <td style={S.td}><span style={S.actionChip}>{log.action?.replace(/_/g, ' ')}</span></td>
-                    <td style={S.td}>{log.user?.role}</td>
+                    <td style={S.td}>{log.user?.role || '—'}</td>
                     <td style={S.td}>{log.user?.campus || '—'}</td>
-                    <td style={S.td}>{new Date(log.createdAt).toLocaleString()}</td>
+                    <td style={S.td}>
+                      {log.createdAt 
+                        ? (() => {
+                            const d = new Date(typeof log.createdAt === 'string' ? log.createdAt.replace(' ', 'T') : log.createdAt);
+                            return isNaN(d.getTime()) ? String(log.createdAt) : d.toLocaleString();
+                          })()
+                        : 'Just now'}
+                    </td>
                   </tr>
                 ))}
               </tbody>

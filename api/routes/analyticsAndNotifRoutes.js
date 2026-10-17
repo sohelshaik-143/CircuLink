@@ -56,7 +56,7 @@ router.get('/overview', protect, async (req, res) => {
 router.get('/branch-activity', protect, async (req, res) => {
   try {
     const branches = await MySQLService.getBranchActivity();
-    res.json({ success: true, branches });
+    res.json({ success: true, branches, branchActivity: branches });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -65,7 +65,37 @@ router.get('/branch-activity', protect, async (req, res) => {
 router.get('/topic-trends', protect, async (req, res) => {
   try {
     const topics = await MySQLService.getTopicTrends();
-    res.json({ success: true, topics });
+    res.json({ success: true, topics, trends: topics });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.get('/campus', protect, async (req, res) => {
+  try {
+    const overview = await MySQLService.getOverview();
+    const branches = await MySQLService.getBranchActivity();
+    res.json({ success: true, stats: overview, branches });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.get('/director', protect, minRole('DEAN'), async (req, res) => {
+  try {
+    const overview = await MySQLService.getOverview();
+    const branches = await MySQLService.getBranchActivity();
+    res.json({ success: true, overview, branches });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.get('/engagement', protect, async (req, res) => {
+  try {
+    const topics = await MySQLService.getTopicTrends();
+    const branches = await MySQLService.getBranchActivity();
+    res.json({ success: true, topics, branches });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

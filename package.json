@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "seed": "node seed/seedData.js"
+    "build": "cd frontend && npm install && npm run build",
+    "seed": "node database/autoMigrate.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -9,9 +9,13 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const fs = require('fs');
 
 const pool = require('./config/mysql');
+const autoMigrate = require('./database/autoMigrate');
 const MySQLService = require('./services/mysqlService');
+
+autoMigrate().catch((err) => console.error('Migration error:', err.message));
 
 // ─── Route Imports ───────────────────────────────────────────────────────────
 const authRoutes     = require('./api/routes/authRoutes');
@@ -151,6 +155,18 @@ app.get('/api/docs', (req, res) => {
 
 app.get('/api', (req, res) => res.redirect('/api/docs'));
 
+// ─── Frontend Production Serving ─────────────────────────────────────────────
+const frontendDist = path.join(__dirname, 'frontend/dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get('*', (req, res, next) => {
+    if (req.url.startsWith('/api') || req.url.startsWith('/uploads') || req.url.startsWith('/socket.io')) {
+      return next();
+    }
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
+
 // ─── Error Handlers ──────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ success: false, message: `Route ${req.method} ${req.originalUrl} not found.` });
@@ -166,16 +182,18 @@ app.use((err, req, res, next) => {
 
 // ─── Start ───────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`\n${'─'.repeat(50)}`);
-  console.log(`🎓 RGUKT RK Valley Platform API (MySQL 8)`);
-  console.log(`${'─'.repeat(50)}`);
-  console.log(`🚀 Server:    http://localhost:${PORT}`);
-  console.log(`📖 API Docs:  http://localhost:${PORT}/api/docs`);
-  console.log(`🏥 Health:    http://localhost:${PORT}/api/health`);
-  console.log(`🔌 Socket:    ws://localhost:${PORT}`);
-  console.log(`${'─'.repeat(50)}\n`);
-});
+if (!process.env.VERCEL) {
+  server.listen(PORT, () => {
+    console.log(`\n${'─'.repeat(50)}`);
+    console.log(`🎓 RGUKT RK Valley Platform API (MySQL 8)`);
+    console.log(`${'─'.repeat(50)}`);
+    console.log(`🚀 Server:    http://localhost:${PORT}`);
+    console.log(`📖 API Docs:  http://localhost:${PORT}/api/docs`);
+    console.log(`🏥 Health:    http://localhost:${PORT}/api/health`);
+    console.log(`🔌 Socket:    ws://localhost:${PORT}`);
+    console.log(`${'─'.repeat(50)}\n`);
+  });
+}
 
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received. Shutting down...');

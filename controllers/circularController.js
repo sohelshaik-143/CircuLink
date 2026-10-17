@@ -96,6 +96,11 @@ exports.approveCircular = async (req, res) => {
       ipAddress: req.ip,
     });
 
+    const io = req.app.get('io');
+    if (circular.status === 'PUBLISHED' && io) {
+      io.emit('new_circular', circular);
+    }
+
     res.json({ success: true, message: 'Circular approved successfully.', circular });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
@@ -169,6 +174,17 @@ exports.emergency = async (req, res) => {
         INSERT INTO notifications (recipient_id, sender_id, type, title, message, priority, is_emergency, related_circular_id)
         VALUES (?, ?, 'EMERGENCY', ?, ?, 'URGENT', TRUE, ?)
       `, [u.id, req.user._id || req.user.id, `🚨 EMERGENCY: ${title}`, content, circular.id]);
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('emergency', {
+        title: `🚨 EMERGENCY: ${title}`,
+        content,
+        broadcastBy: req.user.name,
+        broadcastAt: new Date(),
+      });
+      io.emit('new_circular', circular);
     }
 
     res.status(201).json({ success: true, message: 'Emergency circular broadcasted.', circular });
