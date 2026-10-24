@@ -246,6 +246,21 @@ exports.googleLogin = async (req, res) => {
     const token = auth.generateToken(userRaw.id);
     const refreshToken = auth.generateRefreshToken(userRaw.id);
 
+    try {
+      await MySQLService.updateUser(userRaw.id, {
+        lastLogin: new Date(),
+        isOnline: true,
+      });
+      await MySQLService.logAudit({
+        userId: userRaw.id,
+        action: 'LOGIN',
+        resourceType: 'User',
+        resourceId: userRaw.id,
+        details: { role: userRaw.role, campus: userRaw.campus, provider: 'GOOGLE' },
+        ipAddress: req.ip,
+      });
+    } catch (_) {}
+
     res.json({
       success: true,
       token,
@@ -254,7 +269,12 @@ exports.googleLogin = async (req, res) => {
     });
   } catch (err) {
     console.error('Google Auth Error:', err);
-    res.status(400).json({ success: false, message: `Google authentication failed: ${err.message}` });
+    const isConnRefused = err.code === 'ECONNREFUSED' || (err.message && err.message.includes('ECONNREFUSED'));
+    const status = isConnRefused ? 503 : 400;
+    const message = isConnRefused
+      ? 'Database service unavailable (connect ECONNREFUSED): MySQL service is unreachable. Please verify database is running and DATABASE_URL is configured in environment.'
+      : `Google authentication failed: ${err.message}`;
+    res.status(status).json({ success: false, message });
   }
 };
 
