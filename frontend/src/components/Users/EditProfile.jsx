@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { usersAPI } from '../../api/axios';
+import { usersAPI, getFileUrl } from '../../api/axios';
 import toast from 'react-hot-toast';
 
 const CAMPUSES = ['RK Valley', 'Nuzvid', 'Basar', 'Srikakulam', 'Ongole'];
@@ -19,7 +19,7 @@ export default function EditProfile({ user, onUpdate, onClose }) {
     });
     const [fileOptions, setFileOptions] = useState({
         file: null,
-        previewUrl: user.profilePicture ? `http://localhost:5000${user.profilePicture}` : null
+        previewUrl: user.profilePicture ? getFileUrl(user.profilePicture) : null
     });
     const [loading, setLoading] = useState(false);
 

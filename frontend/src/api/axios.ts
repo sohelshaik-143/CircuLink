@@ -1,10 +1,19 @@
 import axios from 'axios';
 
-const getBaseUrl = (): string => {
+export const getBaseUrl = (): string => {
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL as string;
   }
   return '/api';
+};
+
+export const getFileUrl = (url?: string): string => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const baseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL
+    ? (import.meta.env.VITE_API_URL as string)
+    : '').replace(/\/api\/?$/, '');
+  return `${baseUrl}${url.startsWith('/') ? url : '/' + url}`;
 };
 
 const API = axios.create({

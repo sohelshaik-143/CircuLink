@@ -33,12 +33,18 @@ Under rigorous audits conducted by **Ralph Architecture Quality Engine**, **Code
 ---
 
 ## 📚 Audit & Architecture Documentation
-Comprehensive architectural blueprints and security audits are available in the [`docs/`](docs/) directory:
+Comprehensive architectural blueprints, audits, and operational manuals are available in the [`docs/`](docs/) directory:
+- 📖 [Complete Documentation Portal](docs/README.md) — Comprehensive technical index across all domains.
+- 🌐 [Reference Platform Reconnaissance Audit](docs/audits/reference-platform-audit.md) — Real-world browser audit of `https://rgukt-platform.vercel.app`.
+- 🏛️ [System Overview Architecture](docs/architecture/system-overview.md) — High-level architecture, layer taxonomy, and technology stack.
+- 🗄️ [Relational Database Schema](docs/architecture/database-schema.md) — 3NF relational MySQL 8 schema, foreign keys, and indexes.
+- 🔌 [REST API Reference](docs/architecture/api-reference.md) — Endpoint specifications, request/response schemas, and auth headers.
+- 🛡️ [Multi-Campus Security Architecture](docs/architecture/multi-campus-security-architecture.md) — Multi-campus tenancy boundaries and data ownership.
+- 🚀 [Production Readiness Checklist](docs/operations/production-readiness.md) — Go-live verification criteria and audit report.
+- 🏁 [Implementation Summary](docs/audits/implementation-summary.md) — Complete changelog of verified architectural improvements.
 - 🏛️ [Ralph Code Architecture Audit](docs/RALPH_AUDIT.md) — God controller elimination, fat model decoupling, clean 3-tier layering.
-- 🛡️ [CodeRabbit Security & Performance Audit](docs/CODERABBIT_AUDIT.md) — JWT family rotation, RBAC enforcement, magic-bytes upload validation, N+1 query elimination.
+- 🛡️ [CodeRabbit Security & Performance Audit](docs/CODERABBIT_AUDIT.md) — JWT family rotation, RBAC enforcement, magic-bytes upload validation.
 - ⚡ [GetShitDone (GSD) Pragmatism Audit](docs/GSD_AUDIT.md) — Keep/Kill/Fix Now matrix, dead code removal, environment standardization.
-- 🗺️ [Relational Schema Mapping](docs/SCHEMA_MAPPING.md) — Field-by-field MongoDB to MySQL 8 normalization guide.
-- 🚀 [Antigravity Quality Gate Report](docs/ANTIGRAVITY_GATE_REPORT.md) — Security, Integrity, Performance, and Parity certification.
 
 ---
 

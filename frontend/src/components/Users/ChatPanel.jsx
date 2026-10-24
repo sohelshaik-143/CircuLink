@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
 import CryptoJS from 'crypto-js';
-import { messagesAPI } from '../../api/axios';
+import { messagesAPI, getFileUrl } from '../../api/axios';
 import toast from 'react-hot-toast';
 
 // Derive a shared AES key from both user IDs (same key for both parties)
@@ -34,7 +34,11 @@ export default function ChatPanel({ targetUser, currentUser, onClose }) {
     // Socket.IO connection
     useEffect(() => {
         if (!socketInstance) {
-            socketInstance = io('http://localhost:5000', {
+            const socketUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SOCKET_URL)
+                || (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL
+                    ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '')
+                    : window.location.origin);
+            socketInstance = io(socketUrl, {
                 auth: { token: localStorage.getItem('token') },
             });
         }
@@ -113,7 +117,7 @@ export default function ChatPanel({ targetUser, currentUser, onClose }) {
     const renderMessage = (m) => {
         const isMe = m.sender === currentUser._id || m.sender?._id === currentUser._id;
         if (m.fileUrl) {
-            const url = `http://localhost:5000${m.fileUrl}`;
+            const url = getFileUrl(m.fileUrl);
             return m.fileType === 'image'
                 ? <img src={url} alt="shared" style={styles.msgImage} onClick={() => window.open(url, '_blank')} />
                 : (
@@ -151,7 +155,7 @@ export default function ChatPanel({ targetUser, currentUser, onClose }) {
                         <div style={styles.headerInfo}>
                             <div style={styles.avatar}>
                                 {targetUser?.profilePicture
-                                    ? <img src={`http://localhost:5000${targetUser.profilePicture}`} alt="" style={styles.avatarImg} />
+                                    ? <img src={getFileUrl(targetUser.profilePicture)} alt="" style={styles.avatarImg} />
                                     : targetUser?.name[0]}
                             </div>
                             <div>

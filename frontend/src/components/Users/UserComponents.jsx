@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { usersAPI, postsAPI } from '../../api/axios';
+import { usersAPI, postsAPI, getFileUrl } from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import EditProfile from './EditProfile';
 import BackButton from '../Layout/BackButton';
@@ -85,7 +85,7 @@ export function Leaderboard() {
                                 <Link to={`/profile/${u._id}`} style={lbS.info}>
                                     <div style={lbS.avatar}>
                                         {u.profilePicture
-                                            ? <img src={`http://localhost:5000${u.profilePicture}`} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                                            ? <img src={getFileUrl(u.profilePicture)} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                                             : u.name[0]}
                                     </div>
                                     <div style={{ minWidth: 0 }}>
@@ -209,7 +209,7 @@ export function UserProfile() {
                         style={user.profilePicture ? styles.largeAvatarImgWrapper : styles.largeAvatar}
                     >
                         {user.profilePicture ? (
-                            <img src={`http://localhost:5000${user.profilePicture}`} alt={user.name} style={styles.largeAvatarImg} />
+                            <img src={getFileUrl(user.profilePicture)} alt={user.name} style={styles.largeAvatarImg} />
                         ) : (
                             user.name[0]
                         )}

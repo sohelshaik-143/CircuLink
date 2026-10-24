@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
-import { searchAPI } from '../../api/axios';
+import { searchAPI, getFileUrl } from '../../api/axios';
 
 const ROLE_COLORS = {
   STUDENT: '#3B82F6', FACULTY: '#10B981', HOD: '#8B5CF6',
@@ -205,7 +205,7 @@ export default function Navbar() {
             <button onClick={() => { setShowProfile(s => !s); setShowNotifs(false); }} style={S.profileBtn}>
               <div style={S.avatarWrap}>
                 {user?.profilePicture
-                  ? <img src={user.profilePicture.startsWith('http') ? user.profilePicture : `${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '')}${user.profilePicture}`} alt="" style={S.avatarImg} />
+                  ? <img src={getFileUrl(user.profilePicture)} alt="" style={S.avatarImg} />
                   : <div style={{ ...S.avatar, background: ROLE_COLORS[user?.role] }}>{user?.name?.[0]?.toUpperCase()}</div>}
                 <span style={S.onlineDot} title="Online" />
               </div>
@@ -221,7 +221,7 @@ export default function Navbar() {
                   <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--glass-border)' }}>
                     <div style={S.avatarWrap}>
                       {user?.profilePicture
-                        ? <img src={user.profilePicture.startsWith('http') ? user.profilePicture : `${(process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '')}${user.profilePicture}`} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
+                        ? <img src={getFileUrl(user.profilePicture)} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
                         : <div style={{ ...S.avatar, background: ROLE_COLORS[user?.role], width: 40, height: 40 }}>{user?.name?.[0]?.toUpperCase()}</div>}
                     </div>
                     <p style={{ fontWeight: 800, margin: '0.5rem 0 0', fontSize: '1rem' }}>{user?.name}</p>
