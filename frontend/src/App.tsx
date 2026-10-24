@@ -150,37 +150,35 @@ function AppRoutes() {
   );
 }
 
+const DEFAULT_GOOGLE_CLIENT_ID = '254643186728-8ovhfanc5rv71099kh67v3s6iqua32vb.apps.googleusercontent.com';
+
 export default function App() {
-  const googleClientId = (import.meta.env?.VITE_GOOGLE_CLIENT_ID || "").trim();
+  const googleClientId = (
+    import.meta.env?.VITE_GOOGLE_CLIENT_ID ||
+    import.meta.env?.GOOGLE_CLIENT_ID ||
+    DEFAULT_GOOGLE_CLIENT_ID
+  ).trim();
 
-  const appContent = (
-    <AuthProvider>
-      <BrowserRouter>
-        <NotificationProvider>
-          <AppRoutes />
-          <Toaster position="top-right" toastOptions={{
-            duration: 3000,
-            style: {
-              background: 'var(--glass-bg)',
-              backdropFilter: 'var(--glass-blur)',
-              border: '1px solid var(--glass-border)',
-              borderRadius: 'var(--radius-lg)',
-              color: 'var(--slate-800)',
-              fontWeight: 600
-            }
-          }} />
-        </NotificationProvider>
-      </BrowserRouter>
-    </AuthProvider>
+  return (
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <AuthProvider>
+        <BrowserRouter>
+          <NotificationProvider>
+            <AppRoutes />
+            <Toaster position="top-right" toastOptions={{
+              duration: 3000,
+              style: {
+                background: 'var(--glass-bg)',
+                backdropFilter: 'var(--glass-blur)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: 'var(--radius-lg)',
+                color: 'var(--slate-800)',
+                fontWeight: 600
+              }
+            }} />
+          </NotificationProvider>
+        </BrowserRouter>
+      </AuthProvider>
+    </GoogleOAuthProvider>
   );
-
-  if (googleClientId) {
-    return (
-      <GoogleOAuthProvider clientId={googleClientId}>
-        {appContent}
-      </GoogleOAuthProvider>
-    );
-  }
-
-  return appContent;
 }

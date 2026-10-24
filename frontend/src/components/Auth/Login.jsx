@@ -28,7 +28,10 @@ function GoogleLoginSection({ loading, setLoading, loginWithGoogle, navigate, st
         setLoading(false);
       }
     },
-    onError: () => toast.error('Google Sign-In was cancelled or failed'),
+    onError: (error) => {
+      console.warn('Google Sign-In was cancelled or failed:', error);
+      toast.error('Google Sign-In was cancelled or failed');
+    },
   });
 
   return (
@@ -166,8 +169,6 @@ export default function Login() {
       setForgotLoading(false);
     }
   };
-
-  const hasGoogleAuth = Boolean((import.meta.env?.VITE_GOOGLE_CLIENT_ID || "").trim());
 
 
   return (
@@ -480,7 +481,7 @@ export default function Login() {
                   </div>
                 )}
 
-                {isLogin && hasGoogleAuth && (
+                {isLogin && (
                   <GoogleLoginSection
                     loading={loading}
                     setLoading={setLoading}
