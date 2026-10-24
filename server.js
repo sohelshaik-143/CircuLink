@@ -15,7 +15,9 @@ const pool = require('./config/mysql');
 const autoMigrate = require('./database/autoMigrate');
 const MySQLService = require('./services/mysqlService');
 
-autoMigrate().catch((err) => console.error('Migration error:', err.message));
+if (!process.env.VERCEL) {
+  autoMigrate().catch((err) => console.error('Migration error:', err.message));
+}
 
 // ─── Route Imports ───────────────────────────────────────────────────────────
 const authRoutes     = require('./api/routes/authRoutes');

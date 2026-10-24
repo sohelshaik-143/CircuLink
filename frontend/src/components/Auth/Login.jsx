@@ -23,7 +23,7 @@ function GoogleLoginSection({ loading, setLoading, loginWithGoogle, navigate, st
         await loginWithGoogle(tokenResponse.access_token);
         navigate('/dashboard');
       } catch (err) {
-        toast.error(err.response?.data?.message || 'Google Sign-In Failed');
+        toast.error(err.response?.data?.message || err.message || 'Google Sign-In Failed');
       } finally {
         setLoading(false);
       }

@@ -5,6 +5,7 @@ const poolConfig = process.env.DATABASE_URL
       uri: process.env.DATABASE_URL,
       waitForConnections: true,
       connectionLimit: 10,
+      connectTimeout: 4000,
       ssl: process.env.DB_SSL === 'false' ? undefined : { rejectUnauthorized: false },
     }
   : {
@@ -15,19 +16,22 @@ const poolConfig = process.env.DATABASE_URL
       port: parseInt(process.env.DB_PORT, 10) || 3306,
       waitForConnections: true,
       connectionLimit: 20,
+      connectTimeout: 4000,
       ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
     };
 
 const pool = mysql.createPool(poolConfig);
 
-// Test connection on boot (non-blocking)
-pool.getConnection()
-  .then((conn) => {
-    console.log('⚡ MySQL 8 Connection Pool initialized successfully');
-    conn.release();
-  })
-  .catch((err) => {
-    console.error('❌ MySQL Connection Pool Error:', err.message);
-  });
+// Test connection on boot (non-blocking, local/server only)
+if (!process.env.VERCEL) {
+  pool.getConnection()
+    .then((conn) => {
+      console.log('⚡ MySQL 8 Connection Pool initialized successfully');
+      conn.release();
+    })
+    .catch((err) => {
+      console.error('❌ MySQL Connection Pool Error:', err.message);
+    });
+}
 
 module.exports = pool;
