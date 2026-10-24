@@ -15,6 +15,44 @@ const CAMPUS_DATA = {
   'A': { name: 'All Campuses', icon: '🛡️', color: '#64748b' },
 };
 
+function GoogleLoginSection({ loading, setLoading, loginWithGoogle, navigate, styles }) {
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setLoading(true);
+        await loginWithGoogle(tokenResponse.access_token);
+        navigate('/dashboard');
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Google Sign-In Failed');
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => toast.error('Google Sign-In was cancelled or failed'),
+  });
+
+  return (
+    <>
+      <div style={styles.divider}>
+        <span style={styles.dividerLine} />
+        <span style={styles.dividerText}>OR</span>
+        <span style={styles.dividerLine} />
+      </div>
+
+      <motion.button
+        type="button"
+        whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+        onClick={() => googleLogin()}
+        disabled={loading}
+        style={styles.googleBtn}
+      >
+        <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="G" style={styles.googleIcon} />
+        Sign in with Google Workspace
+      </motion.button>
+    </>
+  );
+}
+
 export default function Login() {
   const { login, register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
@@ -129,20 +167,7 @@ export default function Login() {
     }
   };
 
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        setLoading(true);
-        await loginWithGoogle(tokenResponse.access_token);
-        navigate('/dashboard');
-      } catch (err) {
-        toast.error(err.response?.data?.message || 'Google Sign-In Failed');
-      } finally {
-        setLoading(false);
-      }
-    },
-    onError: () => toast.error('Google Sign-In was cancelled or failed'),
-  });
+  const hasGoogleAuth = Boolean((import.meta.env?.VITE_GOOGLE_CLIENT_ID || "").trim());
 
 
   return (
@@ -455,25 +480,14 @@ export default function Login() {
                   </div>
                 )}
 
-                {isLogin && (
-                  <>
-                    <div style={styles.divider}>
-                      <span style={styles.dividerLine} />
-                      <span style={styles.dividerText}>OR</span>
-                      <span style={styles.dividerLine} />
-                    </div>
-
-                    <motion.button
-                      type="button"
-                      whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
-                      onClick={() => googleLogin()}
-                      disabled={loading}
-                      style={styles.googleBtn}
-                    >
-                      <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="G" style={styles.googleIcon} />
-                      Sign in with Google Workspace
-                    </motion.button>
-                  </>
+                {isLogin && hasGoogleAuth && (
+                  <GoogleLoginSection
+                    loading={loading}
+                    setLoading={setLoading}
+                    loginWithGoogle={loginWithGoogle}
+                    navigate={navigate}
+                    styles={styles}
+                  />
                 )}
               </form>
             </motion.div>
