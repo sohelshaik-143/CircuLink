@@ -5,7 +5,6 @@ const poolConfig = process.env.DATABASE_URL
       uri: process.env.DATABASE_URL,
       waitForConnections: true,
       connectionLimit: 10,
-      connectTimeout: 4000,
       ssl: process.env.DB_SSL === 'false' ? undefined : { rejectUnauthorized: false },
     }
   : {
@@ -16,7 +15,6 @@ const poolConfig = process.env.DATABASE_URL
       port: parseInt(process.env.DB_PORT, 10) || 3306,
       waitForConnections: true,
       connectionLimit: 20,
-      connectTimeout: 4000,
       ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
     };
 
