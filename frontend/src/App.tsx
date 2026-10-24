@@ -135,6 +135,8 @@ function AppRoutes() {
           <Route path="/profile" element={<ProtectedRoute><PageWrapper><UserProfile /></PageWrapper></ProtectedRoute>} />
           <Route path="/profile/:id" element={<ProtectedRoute><PageWrapper><UserProfile /></PageWrapper></ProtectedRoute>} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/home" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/feed" element={<Navigate to="/posts" replace />} />
           <Route path="*" element={
             <div style={{ textAlign: 'center', padding: '5rem' }}>
               <h1 style={{ fontSize: '4rem', color: 'var(--primary)' }}>404</h1>
@@ -149,28 +151,36 @@ function AppRoutes() {
 }
 
 export default function App() {
-  const googleClientId = (import.meta.env?.VITE_GOOGLE_CLIENT_ID) || "";
+  const googleClientId = (import.meta.env?.VITE_GOOGLE_CLIENT_ID || "").trim();
 
-  return (
-    <GoogleOAuthProvider clientId={googleClientId}>
-      <AuthProvider>
-        <BrowserRouter>
-          <NotificationProvider>
-            <AppRoutes />
-            <Toaster position="top-right" toastOptions={{
-              duration: 3000,
-              style: {
-                background: 'var(--glass-bg)',
-                backdropFilter: 'var(--glass-blur)',
-                border: '1px solid var(--glass-border)',
-                borderRadius: 'var(--radius-lg)',
-                color: 'var(--slate-800)',
-                fontWeight: 600
-              }
-            }} />
-          </NotificationProvider>
-        </BrowserRouter>
-      </AuthProvider>
-    </GoogleOAuthProvider>
+  const appContent = (
+    <AuthProvider>
+      <BrowserRouter>
+        <NotificationProvider>
+          <AppRoutes />
+          <Toaster position="top-right" toastOptions={{
+            duration: 3000,
+            style: {
+              background: 'var(--glass-bg)',
+              backdropFilter: 'var(--glass-blur)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: 'var(--radius-lg)',
+              color: 'var(--slate-800)',
+              fontWeight: 600
+            }
+          }} />
+        </NotificationProvider>
+      </BrowserRouter>
+    </AuthProvider>
   );
+
+  if (googleClientId) {
+    return (
+      <GoogleOAuthProvider clientId={googleClientId}>
+        {appContent}
+      </GoogleOAuthProvider>
+    );
+  }
+
+  return appContent;
 }
