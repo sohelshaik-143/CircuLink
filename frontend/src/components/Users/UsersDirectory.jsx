@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { usersAPI, communityAPI } from '../../api/axios';
+import { usersAPI, communityAPI, getFileUrl } from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
 import BackButton from '../Layout/BackButton';
@@ -160,7 +160,7 @@ export default function UsersDirectory() {
                                         <Link to={`/profile/${u._id}`} style={styles.cardLink}>
                                             <div style={styles.avatarWrapper}>
                                                 {u.profilePicture ? (
-                                                    <img src={`http://localhost:5000${u.profilePicture}`} alt="" style={styles.avatarImg} />
+                                                    <img src={getFileUrl(u.profilePicture)} alt="" style={styles.avatarImg} />
                                                 ) : (
                                                     <div style={styles.avatar}>{u.name[0]}</div>
                                                 )}

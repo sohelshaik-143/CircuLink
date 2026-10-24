@@ -1,7 +1,7 @@
 // PostCard.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { postsAPI } from '../../api/axios';
+import { postsAPI, getFileUrl } from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import BackButton from '../Layout/BackButton';
@@ -72,11 +72,11 @@ export function PostCard({ post, onUpdate }) {
         <div style={cardStyles.attachmentsGrid}>
           {post.attachments.map((file, idx) => (
             file.type === 'image' ? (
-              <a key={idx} href={`http://localhost:5000${file.url}`} target="_blank" rel="noreferrer">
-                <img src={`http://localhost:5000${file.url}`} alt={file.filename} style={cardStyles.imgAttachment} />
+              <a key={idx} href={getFileUrl(file.url)} target="_blank" rel="noreferrer">
+                <img src={getFileUrl(file.url)} alt={file.filename} style={cardStyles.imgAttachment} />
               </a>
             ) : (
-              <a key={idx} href={`http://localhost:5000${file.url}`} target="_blank" rel="noreferrer" style={cardStyles.docAttachment}>
+              <a key={idx} href={getFileUrl(file.url)} target="_blank" rel="noreferrer" style={cardStyles.docAttachment}>
                 📎 {file.filename.length > 20 ? file.filename.slice(0, 20) + '...' : file.filename}
               </a>
             )

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { circularsAPI } from '../../api/axios';
+import { circularsAPI, getFileUrl } from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import BackButton from '../Layout/BackButton';
 import { motion } from 'framer-motion';
@@ -96,7 +96,7 @@ export default function CircularDetail() {
               {circular.attachments.map((file, idx) => (
                 <a 
                   key={idx} 
-                  href={`http://localhost:5000${file.url}`} 
+                  href={getFileUrl(file.url)} 
                   target="_blank" 
                   rel="noreferrer" 
                   style={styles.attachmentLink}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { analyticsAPI, usersAPI } from '../../api/axios';
+import { analyticsAPI, usersAPI, getFileUrl } from '../../api/axios';
 import BackButton from '../Layout/BackButton';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import {
@@ -193,7 +193,7 @@ export default function AnalyticsDashboard() {
                 </div>
                 <div style={S.lbAvatar}>
                   {u.profilePicture
-                    ? <img src={`http://localhost:5000${u.profilePicture}`} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                    ? <img src={getFileUrl(u.profilePicture)} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                     : u.name[0]}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
