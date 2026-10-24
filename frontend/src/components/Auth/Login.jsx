@@ -170,6 +170,11 @@ export default function Login() {
     }
   };
 
+  const hasGoogleAuth = Boolean((
+    import.meta.env?.VITE_GOOGLE_CLIENT_ID ||
+    import.meta.env?.GOOGLE_CLIENT_ID ||
+    ''
+  ).trim());
 
   return (
     <div style={styles.page}>
@@ -481,7 +486,7 @@ export default function Login() {
                   </div>
                 )}
 
-                {isLogin && (
+                {isLogin && hasGoogleAuth && (
                   <GoogleLoginSection
                     loading={loading}
                     setLoading={setLoading}

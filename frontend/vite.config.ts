@@ -9,13 +9,13 @@ export default defineConfig(({ mode }) => {
     env.GOOGLE_CLIENT_ID ||
     process.env.VITE_GOOGLE_CLIENT_ID ||
     process.env.GOOGLE_CLIENT_ID ||
-    '254643186728-8ovhfanc5rv71099kh67v3s6iqua32vb.apps.googleusercontent.com';
+    '';
 
   return {
     plugins: [react()],
     define: {
       global: 'window',
-      'import.meta.env.VITE_GOOGLE_CLIENT_ID': JSON.stringify(googleClientId),
+      ...(googleClientId ? { 'import.meta.env.VITE_GOOGLE_CLIENT_ID': JSON.stringify(googleClientId) } : {}),
     },
   server: {
     port: 3000,

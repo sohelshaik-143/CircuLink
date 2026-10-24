@@ -39,7 +39,7 @@ app:
   upload:
     dir: ${UPLOAD_DIR:uploads}
   google:
-    client-id: ${GOOGLE_CLIENT_ID:254643186728-8ovhfanc5rv71099kh67v3s6iqua32vb.apps.googleusercontent.com}
+    client-id: ${GOOGLE_CLIENT_ID:}
 
 logging:
   level:
